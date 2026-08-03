@@ -139,7 +139,13 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Battleship.cpp" />
+    <ClCompile Include="custom_ship.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="ship.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="custom_ship.h" />
+    <ClInclude Include="ship.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
