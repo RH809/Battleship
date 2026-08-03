@@ -5,25 +5,34 @@
 
 class Ship {
 protected:
-	const int width, height;
+	int width, height;
 	int x, y;
-	int rotation; // 0 - 3 based on the number of 90 degree rotations
 	int numPoints;
+	int shipNum;
+	std::vector<std::vector<bool>> shipGrid;
 
-	bool isValidPosition(const std::vector<std::vector<char>>& board) const; // check if the ship can be placed at the current position and rotation
+	virtual bool isValidPosition(const std::vector<std::vector<char>>& board) const; // check if the ship can be placed at the current position and rotation
+	virtual void sink(std::vector<std::vector<char>>& board) const;
+	virtual void generateShipGrid();
+
 public:
-	Ship(int w, int h, int _x, int _y, int r);
+	Ship(int w, int h, int _x, int _y);
 	int getWidth() const;
 	int getHeight() const;
 	int getX() const;
 	int getY() const;
 	void setPosition(int _x, int _y);
-	int getRotation() const;
-	void setRotation(int r);
+	void setShipNum(int num);
 
-	bool addToBoard(std::vector<std::vector<char>>& board) const;
-	void removeFromBoard(std::vector<std::vector<char>>& board) const;
-	bool hit(int hitX, int hitY); // ship point on ship; true = sunk
+	// Transformations
+	virtual void rotateClockwise();
+	virtual void rotateCounterClockwise();
+	virtual void flipHorizontal();
+	virtual void flipVertical();
+
+	virtual bool addToBoard(std::vector<std::vector<char>>& board) const;
+	virtual void removeFromBoard(std::vector<std::vector<char>>& board) const;
+	virtual bool hit(int hitX, int hitY, std::vector<std::vector<char>>& board); // ship point on ship; true = sunk
 };
 
 #endif
