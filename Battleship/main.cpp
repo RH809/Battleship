@@ -18,27 +18,33 @@ int getIntegerInput(std::string, int, int);
 
 int main()
 {
-    std::cout << "Welcome to Battleship!\n" << RESET;
-    return 0;
-    std::string mainPrompt = "===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Exit";
+    std::cout << "Welcome to Battleship!\n";
+    int numPlayers = 1;
+    int gridSize = 10;
+    bool classic = true;
+    std::vector<Ship> baseShips = std::vector<Ship>();
+    std::string mainPrompt = "===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Create Custom Ship\n[6] Exit";
     while (true) {
-        switch (getIntegerInput(mainPrompt, 1, 5)) {
+        int mainInput = getIntegerInput(mainPrompt, 1, 5);
+        switch (mainInput) {
         case 1:
-            break;
         case 2:
-            break;
         case 3:
-            break;
         case 4:
+            numPlayers = (mainInput % 2 == 0) ? 2 : 1;
+            classic = mainInput <= 2;
+            setup(classic, baseShips);
             break;
         case 5:
+            // create custom ships
+            break;
+        case 6:
             return 0;
         }
     }   
 }
 
-void setup(int players, bool classic) {
-    std::vector<Ship> baseShips;
+int setup(bool classic, std::vector<Ship>& baseShips) {
     int gridSize = 10;
     if (classic) {
         baseShips = classicShips;
@@ -47,12 +53,15 @@ void setup(int players, bool classic) {
 		gridSize = getIntegerInput("Enter grid size (5-20): ", 5, 20);
         // input ships
     }
-    int numShips = baseShips.size();
+    return gridSize;
+}
+
+void shipPlacement(int players, std::vector<Ship>& const baseShips) {
     if (players == 1) {
         // bot setup
     }
     for (int i = 1; i <= players; i++) {
-		std::string playerPrompt = "===== Player " + std::to_string(i) + " Setup =====\n";
+        std::string playerPrompt = "===== Player " + std::to_string(i) + " Setup =====\n";
     }
 }
 
