@@ -5,11 +5,21 @@
 #include "ship.h"
 #include "custom_ship.h"
 
+#define RESET "\033[0m"
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define GRAY "\033[90m"
+#define BLACK "\033[30m"
+
 std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1, 0, 0), Ship(4, 1, 0, 0), Ship(5, 1, 0, 0) };
+
+void setup(int, bool);
+int getIntegerInput(std::string, int, int);
 
 int main()
 {
-    std::cout << "Welcome to Battleship!\n";
+    std::cout << "Welcome to Battleship!\n" << RESET;
+    return 0;
     std::string mainPrompt = "===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Exit";
     while (true) {
         switch (getIntegerInput(mainPrompt, 1, 5)) {
@@ -29,17 +39,20 @@ int main()
 
 void setup(int players, bool classic) {
     std::vector<Ship> baseShips;
+    int gridSize = 10;
     if (classic) {
         baseShips = classicShips;
     }
     else {
+		gridSize = getIntegerInput("Enter grid size (5-20): ", 5, 20);
         // input ships
     }
+    int numShips = baseShips.size();
     if (players == 1) {
         // bot setup
     }
     for (int i = 1; i <= players; i++) {
-        
+		std::string playerPrompt = "===== Player " + std::to_string(i) + " Setup =====\n";
     }
 }
 
