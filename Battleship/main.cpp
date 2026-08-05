@@ -48,7 +48,7 @@ int main()
     PlayerManager player1, player2;
     std::string mainPrompt = "\n===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Create Custom Ship\n[6] Exit\nEnter your choice: ";
     while (true) {
-        int mainInput = getIntegerInput(mainPrompt, 1, 5);
+        int mainInput = getIntegerInput(mainPrompt, 1, 6);
         switch (mainInput) {
         case 1:
         case 2:
@@ -56,10 +56,15 @@ int main()
         case 4:
             numPlayers = (mainInput % 2 == 0) ? 2 : 1;
             classic = mainInput <= 2;
+            clearOutput();
+            std::cout << "==== " << (classic ? "Classic " : "Custom ") << (numPlayers == 1 ? " Single-player" : " Two-player") << " ==== \n";
             gridSize = setup(classic, baseShips);
 			if (gridSize == EXIT_CODE) {
                 continue;
 			}
+            if (shipPlacement(numPlayers, gridSize, classic, baseShips, player1, player2) == EXIT_CODE) {
+                continue;
+            }
             break;
         case 5:
             // create custom ships
@@ -108,7 +113,7 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
         // input ships
     }
 	for (int i = 0; i < baseShips.size(); i++) {
-		baseShips[i].setShipNum(i);
+		baseShips[i].setShipNum(i + 1);
 	}
     return gridSize;
 }
@@ -131,10 +136,10 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
         int shipsPlaced = 0;
         while (true) {
             std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
-            std::cout << "Board:\n";
+            std::cout << "\nBoard:\n";
             printBoard(placementBoard);
             std::cout << "\nShips:\n";
-            printShips(ships, placed);
+            printShips(baseShips, placed);
             int placementInput = 0;
             int transformInput = 0;
             std::pair<int, int> shipPos;
@@ -156,8 +161,16 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
                 if (classic) {
                     while (true) {
                         std::cout << "\nShip " + std::to_string(placementInput) << "\n";
+                        for (int j = 0; j < std::max(4, ships[placementInput - 1].getWidth() * 2); j++) {
+                            std::cout << "-";
+                        }
+                        std::cout << "\n";
                         printShip(ships[placementInput - 1]);
-                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90°\n[2] Confirm Orientation\n[3] Return to Ship Selection\nEnter your choice: ", 1, 3);
+                        for (int j = 0; j < std::max(4, ships[placementInput - 1].getWidth() * 2); j++) {
+                            std::cout << "-";
+                        }
+                        std::cout << "\n";
+                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90 degrees\n[2] Confirm Orientation\n[3] Return to Ship Selection\nEnter your choice: ", 1, 3);
                         if (transformInput >= 2) {
                             break;
                         }
@@ -167,8 +180,16 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
                 else {
                     while (true) {
                         std::cout << "\nShip " + std::to_string(placementInput) << "\n";
+                        for (int j = 0; j < std::max(4, ships[placementInput - 1].getWidth() * 2); j++) {
+                            std::cout << "-";
+                        }
+                        std::cout << "\n";
                         printShip(ships[placementInput - 1]);
-                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90° Clockwise\n[2] Rotate 90° Counter-Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Orientation\n[6] Return to Ship Selection\nEnter your choice: ", 1, 6);
+                        for (int j = 0; j < std::max(4, ships[placementInput - 1].getWidth() * 2); j++) {
+                            std::cout << "-";
+                        }
+                        std::cout << "\n";
+                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90 Degrees Clockwise\n[2] Rotate 90 Degrees Counter - Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Orientation\n[6] Return to Ship Selection\nEnter your choice : ", 1, 6);
                         if (transformInput >= 5) {
                             break;
                         }
@@ -194,14 +215,25 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
                 }
                 // Place ship
                 while (true) {
-                    std::cout << "Board:\n";
+                    std::cout << "\nBoard:\n";
                     printBoard(placementBoard);
+                    std::cout << "\n";
+
+                    std::cout << "\nShip " + std::to_string(placementInput) << "\n";
+                    for (int j = 0; j < std::max(4, ships[placementInput - 1].getWidth() * 2); j++) {
+                        std::cout << "-";
+                    }
+                    std::cout << "\n";
+                    printShip(ships[placementInput - 1]);
+                    for (int j = 0; j < std::max(4, ships[placementInput - 1].getWidth() * 2); j++) {
+                        std::cout << "-";
+                    }
                     std::cout << "\n";
                     shipPos = getTwoIntegersInput("Enter the position to place the ship (row col) or 'cancel' to return to ship selection: ", 0, gridSize - 1, 0, gridSize - 1, true, "cancel");
 					if (shipPos.first == EXIT_CODE) {
 						break;
 					}
-					ships[placementInput - 1].setPosition(shipPos.first, shipPos.second);
+					ships[placementInput - 1].setPosition(shipPos.second, shipPos.first);
                     if (ships[placementInput - 1].addToBoard(placementBoard)) {
                         placed[placementInput - 1] = true;
 						std::cout << "Ship " + std::to_string(placementInput) + " placed successfully!\n";
@@ -246,15 +278,19 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
                     switch (randomInt(0, 3)) {
                     case 0:
                         ship.rotateClockwise();
+                        break;
                     case 1:
                         ship.rotateCounterClockwise();
+                        break;
                     case 2:
                         ship.flipHorizontal();
+                        break;
                     case 3:
                         ship.flipVertical();
+                        break;
                     }
 				}
-                ship.setPosition(randomInt(0, gridSize - ship.getHeight() - 1), randomInt(0, gridSize - ship.getWidth() - 1));
+                ship.setPosition(randomInt(0, gridSize - ship.getWidth() - 1), randomInt(0, gridSize - ship.getHeight() - 1));
             } while (!ship.addToBoard(placementBoard));
         }
 		player2.setPlacementBoard(placementBoard);
@@ -272,6 +308,7 @@ void printShip(Ship ship) {
             else {
                 std::cout << " ";
             }
+            std::cout << " ";
         }
         std::cout << "\n";
     }
@@ -318,6 +355,7 @@ void printShips(std::vector<Ship>& const ships, std::vector<bool>& const placed)
                 else {
                     std::cout << " ";
                 }
+				std::cout << " ";
 				maxHeight = std::max(maxHeight, ships[j].getHeight());
             }
             std::cout << "  ";
@@ -335,7 +373,7 @@ void printShips(std::vector<Ship>& const ships, std::vector<bool>& const placed)
 				std::cout << "    ";
                 if (j >= ships[k].getHeight()) {
 					for (int l = 0; l < ships[k].getWidth(); l++) {
-						std::cout << " ";
+						std::cout << "  ";
 					}
                 }
                 else {
@@ -346,6 +384,7 @@ void printShips(std::vector<Ship>& const ships, std::vector<bool>& const placed)
                         else {
                             std::cout << " ";
                         }
+                        std::cout << " ";
                     }
                 }
                 std::cout << "  ";
@@ -355,6 +394,7 @@ void printShips(std::vector<Ship>& const ships, std::vector<bool>& const placed)
             std::cout << "\n";
         }
         std::cout << "\n";
+		i += SHIP_ROW_LENGTH;
     }
 }
 
