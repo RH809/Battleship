@@ -22,6 +22,7 @@ void trimAndToLower(std::string& s);
 
 int setup(bool, std::vector<Ship>&);
 int shipPlacement(int, int, bool, std::vector<Ship>& const, PlayerManager&, PlayerManager&);
+void printShip(Ship ship);
 void printBoard(std::vector<std::vector<char>>& const);
 void printShips(std::vector<Ship>& const);
 void printShips(std::vector<Ship>& const, std::vector<bool>& const);
@@ -114,7 +115,8 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
         while (true) {
             std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
             std::cout << "Board:\n";
-            std::cout << "Ships:\n";
+            printBoard(placementBoard);
+            std::cout << "\nShips:\n";
             printShips(ships, placed);
             int placementInput = 0;
             int transformInput = 0;
@@ -136,7 +138,7 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
                 ships[placementInput - 1] = baseShips[placementInput - 1];
                 while (true) {
                     std::cout << "\nShip " + std::to_string(placementInput) << "\n";
-                    // TODO Display ship
+					printShip(ships[placementInput - 1]);
                     transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90° Clockwise\n[2] Rotate 90° Counter-Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Transformation\n[6] Return to Ship Selection\nEnter your choice: ", 1, 6, true);
                     if (transformInput >= 5) {
                         break;
@@ -161,6 +163,9 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
                 }
                 // Place ship
                 while (true) {
+                    std::cout << "Board:\n";
+                    printBoard(placementBoard);
+                    std::cout << "\n";
                     shipPos = getTwoIntegersInput("Enter the position to place the ship (row col) or 'cancel' to return to ship selection: ", 0, gridSize - 1, 0, gridSize - 1, true, "cancel");
 					if (shipPos.first == EXIT_CODE) {
 						break;
@@ -188,9 +193,33 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
     }
 
     if (players == 1) {
+        // Bot is player2
+        std::vector<Ship> ships = baseShips;
+        std::vector<std::vector<char>> placementBoard = std::vector<std::vector<char>>(
+            gridSize, std::vector<char>(gridSize, '.')
+        );
+        for (Ship ship : ships) {
+            
+        }
+		player2.setPlacementBoard(placementBoard);
+		player2.setShips(ships);
         // bot setup
     }
     return 0;
+}
+
+void printShip(Ship ship) {
+    for (int i = 0; i < ship.getHeight(); i++) {
+        for (int j = 0; j < ship.getWidth(); j++) {
+            if (ship.getShipGrid()[i][j]) {
+                std::cout << "o";
+            }
+            else {
+                std::cout << " ";
+            }
+        }
+        std::cout << "\n";
+    }
 }
 
 void printBoard(std::vector<std::vector<char>>& const board) {
