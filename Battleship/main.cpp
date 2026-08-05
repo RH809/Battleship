@@ -22,11 +22,14 @@ int randomInt(int, int);
 void trimAndToLower(std::string& s);
 void clearOutput(void);
 int setup(bool, std::vector<Ship>&);
-int shipPlacement(int, int, bool, std::vector<Ship>& const, PlayerManager&, PlayerManager&);
+int shipPlacement(int, int, bool, const std::vector<Ship>&, PlayerManager&, PlayerManager&);
+void playSingleplayer(PlayerManager&, PlayerManager&, int);
+void playMultiplayer(PlayerManager&, PlayerManager&, int);
 void printShip(Ship ship);
-void printBoard(std::vector<std::vector<char>>& const);
-void printShips(std::vector<Ship>& const);
-void printShips(std::vector<Ship>& const, std::vector<bool>& const);
+void printGameBoard(const std::vector<std::vector<char>>&);
+void printPlacementBoard(const std::vector<std::vector<char>>&);
+void printShips(const std::vector<Ship>&);
+void printShips(const std::vector<Ship>&, const std::vector<bool>&);
 int getIntegerInput(std::string, int, int, bool allowExit = false, std::string exitString = "exit");
 int getIntegerInput(int, int);
 std::pair<int, int> getTwoIntegersInput(std::string, int, int, int, int, bool allowExit = false, std::string exitString = "exit");
@@ -139,7 +142,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
         while (true) {
             std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
             std::cout << "\nBoard:\n";
-            printBoard(placementBoard);
+            printPlacementBoard(placementBoard);
             std::cout << "\nShips:\n";
             printShips(baseShips, placed);
             int placementInput = 0;
@@ -218,7 +221,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
                 // Place ship
                 while (true) {
                     std::cout << "\nBoard:\n";
-                    printBoard(placementBoard);
+                    printPlacementBoard(placementBoard);
                     std::cout << "\n";
 
                     std::cout << "\nShip " + std::to_string(placementInput) << "\n";
@@ -238,6 +241,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
 					ships[placementInput - 1].setPosition(shipPos.second, shipPos.first);
                     if (ships[placementInput - 1].addToBoard(placementBoard)) {
                         placed[placementInput - 1] = true;
+                        shipsPlaced++;
 						std::cout << "Ship " + std::to_string(placementInput) + " placed successfully!\n";
                         break;
                     }
@@ -258,7 +262,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
         player.setShips(ships);
         std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
         std::cout << "Board:\n";
-        printBoard(placementBoard);
+        printPlacementBoard(placementBoard);
 		std::cout << " Player " + std::to_string(i) + " setup complete!\n";
 		std::cout << "\nPress Enter to continue...";
         std::cin.get();
@@ -301,6 +305,46 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
     return 0;
 }
 
+void playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<Ship> baseShips, int gridSize) {
+    int turn = 1;
+    while (true) {
+        if (turn == 1) {
+			std::cout << "\n===== Player's Turn =====\n\n";
+            std::cout << "\nBoard:\n";
+            printGameBoard(player.getDisplayBoard());
+            std::cout << "\nShips:\n";
+            printShips(baseShips, player.getSunkList());
+			std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
+            switch (player.attack(attackPos.first, attackPos.second)) {
+            case -1:
+				std::cout << "Invalid attack. Please try again.\n";
+                continue;
+            case 0:
+                std::cout << "Miss!\n";
+                break;
+            case 1:
+				std::cout << "Hit!\n";
+                break;
+            case 2:
+				std::cout << "Hit! You sunk a ship!\n";
+                break;
+            }
+            std::cout << "\nBoard:\n";
+            printGameBoard(player.getDisplayBoard());
+            std::cout << "\nShips:\n";
+            printShips(baseShips, player.getSunkList());
+        }
+        else {
+			std::cout << "\n===== Bot's Turn =====\n";
+        }
+        turn = 3 - turn;
+    }
+}
+
+void playMultiplayer(PlayerManager& player1, PlayerManager& player2, int gridSize) {
+
+}
+
 void printShip(Ship ship) {
     std::cout << BLUE;
     for (int i = 0; i < ship.getHeight(); i++) {
@@ -318,7 +362,42 @@ void printShip(Ship ship) {
     std::cout << RESET;
 }
 
-void printBoard(std::vector<std::vector<char>>& const board) {
+void printGameBoard(const std::vector < std::vector<char>>& board) {
+    int n = board.size();
+    std::cout << "  ";
+    std::cout << YELLOW;
+    for (int i = 0; i < n; i++) {
+        std::cout << i << " ";
+        if (n > 10 && i < 10) {
+            std::cout << " ";
+        }
+    }
+    std::cout << RESET;
+    std::cout << "\n";
+    for (int i = 0; i < n; i++) {
+        std::cout << YELLOW << i << " " << RESET;
+        if (n > 10 && i < 10) {
+            std::cout << " ";
+        }
+        for (int j = 0; j < n; j++) {
+            if (board[i][j] == '.') {
+                std::cout << BLUE;
+            }
+            else if (board[i][j] == 'o' || board[i][j] == 'x') {
+                std::cout << RED;
+            }
+            std::cout << board[i][j] << " ";
+            if (n > 10) {
+                std::cout << " ";
+            }
+            std::cout << RESET;
+        }
+        std::cout << "\n";
+    }
+    std::cout << RESET;
+}
+
+void printPlacementBoard(const std::vector<std::vector<char>>& board) {
     int n = board.size();
 	std::cout << "  ";
     std::cout << YELLOW;
@@ -350,11 +429,11 @@ void printBoard(std::vector<std::vector<char>>& const board) {
     std::cout << RESET;
 }
 
-void printShips(std::vector<Ship>& const ships) {
+void printShips(const std::vector<Ship>& ships) {
 	
 }
 
-void printShips(std::vector<Ship>& const ships, std::vector<bool>& const placed) {
+void printShips(const std::vector<Ship>& ships, const std::vector<bool>& placed) {
     int n = ships.size();
     int i = 0;
     while (i < n) {

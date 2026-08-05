@@ -57,7 +57,7 @@ bool Ship::hit(int hitX, int hitY, std::vector<std::vector<char>>& board) {
 		return false;
 	}
 	numPoints--;
-	board[hitX][hitY] = '*';
+	board[hitX][hitY] = 'o';
 	if (numPoints == 0) {
 		sink(board);
 		return true;
