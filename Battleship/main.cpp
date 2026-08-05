@@ -96,7 +96,7 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
     return gridSize;
 }
 
-int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& const baseShips, PlayerManager& player1, PlayerManager& player2) {
+int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& const baseShips, PlayerManager& player1, PlayerManager& player2) {
     int totalShips = baseShips.size();
     for (int i = 1; i <= players; i++) {
         PlayerManager player;
@@ -136,29 +136,43 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
             else if (!placed[placementInput - 1]) {
                 // Transform ship
                 ships[placementInput - 1] = baseShips[placementInput - 1];
-                while (true) {
-                    std::cout << "\nShip " + std::to_string(placementInput) << "\n";
-					printShip(ships[placementInput - 1]);
-                    transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90° Clockwise\n[2] Rotate 90° Counter-Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Transformation\n[6] Return to Ship Selection\nEnter your choice: ", 1, 6, true);
-                    if (transformInput >= 5) {
-                        break;
-                    }
-                    switch (transformInput) {
-                    case 1:
+                if (classic) {
+                    while (true) {
+                        std::cout << "\nShip " + std::to_string(placementInput) << "\n";
+                        printShip(ships[placementInput - 1]);
+                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90°\n[2] Confirm Orientation\n[3] Return to Ship Selection\nEnter your choice: ", 1, 3);
+                        if (transformInput >= 2) {
+                            break;
+                        }
                         ships[placementInput - 1].rotateClockwise();
-                        break;
-                    case 2:
-                        ships[placementInput - 1].rotateCounterClockwise();
-                        break;
-                    case 3:
-                        ships[placementInput - 1].flipHorizontal();
-                        break;
-                    case 4:
-                        ships[placementInput - 1].flipVertical();
-                        break;
                     }
                 }
-                if (transformInput == 6) {
+                else {
+                    while (true) {
+                        std::cout << "\nShip " + std::to_string(placementInput) << "\n";
+                        printShip(ships[placementInput - 1]);
+                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90° Clockwise\n[2] Rotate 90° Counter-Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Orientation\n[6] Return to Ship Selection\nEnter your choice: ", 1, 6);
+                        if (transformInput >= 5) {
+                            break;
+                        }
+                        switch (transformInput) {
+                        case 1:
+                            ships[placementInput - 1].rotateClockwise();
+                            break;
+                        case 2:
+                            ships[placementInput - 1].rotateCounterClockwise();
+                            break;
+                        case 3:
+                            ships[placementInput - 1].flipHorizontal();
+                            break;
+                        case 4:
+                            ships[placementInput - 1].flipVertical();
+                            break;
+                        }
+                    }
+                }
+                
+                if ((transformInput == 3 && classic) || (transformInput == 6 && !classic)) {
                     continue;
                 }
                 // Place ship
@@ -170,6 +184,7 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
 					if (shipPos.first == EXIT_CODE) {
 						break;
 					}
+					ships[placementInput - 1].setPosition(shipPos.first, shipPos.second);
                     if (ships[placementInput - 1].addToBoard(placementBoard)) {
                         placed[placementInput - 1] = true;
 						std::cout << "Ship " + std::to_string(placementInput) + " placed successfully!\n";
@@ -199,7 +214,15 @@ int shipPlacement(int players, int gridSize, bool classic,std::vector<Ship>& con
             gridSize, std::vector<char>(gridSize, '.')
         );
         for (Ship ship : ships) {
-            
+            do {
+                int transforms = rand() % 3;
+				for (int i = 0; i < transforms; i++) {
+                    switch (rand() % 4) {
+                        
+                    }
+				}
+                ship.setPosition(rand() % gridSize, rand() % gridSize);
+            } while (!ship.addToBoard(placementBoard));
         }
 		player2.setPlacementBoard(placementBoard);
 		player2.setShips(ships);
