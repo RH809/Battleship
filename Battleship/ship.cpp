@@ -12,6 +12,9 @@ int Ship::getX() const { return x; }
 int Ship::getY() const { return y; }
 void Ship::setPosition(int _x, int _y) { x = _x; y = _y; }
 void Ship::setShipNum(int num) { shipNum = num; }
+int Ship::getShipNum() const { return shipNum; }
+
+std::vector<std::vector<bool>> Ship::getShipGrid() const { return shipGrid; }
 
 bool Ship::isValidPosition(const std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {

@@ -23,6 +23,9 @@ public:
 	int getY() const;
 	void setPosition(int _x, int _y);
 	void setShipNum(int num);
+	int getShipNum() const;
+
+	std::vector<std::vector<bool>> getShipGrid() const;
 
 	// Transformations
 	virtual void rotateClockwise();
