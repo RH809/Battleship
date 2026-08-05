@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+
 #include "ship.h"
 #include "custom_ship.h"
 #include "player_manager.h"
@@ -24,7 +25,7 @@ void trimAndToLower(std::string& s);
 void clearOutput(void);
 int setup(bool, std::vector<Ship>&);
 int shipPlacement(int, int, bool, const std::vector<Ship>&, PlayerManager&, PlayerManager&);
-void playSingleplayer(PlayerManager&, PlayerManager&, int);
+int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
 void playMultiplayer(PlayerManager&, PlayerManager&, int);
 void printShip(Ship ship);
 void printGameBoard(const std::vector<std::vector<char>>&);
@@ -39,10 +40,9 @@ std::pair<int, int> getTwoIntegersInput(std::string, int, int, int, int, bool al
 std::mt19937 gen(std::random_device{}());
 std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1, 0, 0), Ship(4, 1, 0, 0), Ship(5, 1, 0, 0) };
 
+
 int main()
 {
-    std::cout << "\nPress Enter to continue...";
-    std::cin.get();
     clearOutput();
     std::cout << "Welcome to Battleship!\n";
     int numPlayers = 1;
@@ -61,15 +61,25 @@ int main()
             numPlayers = (mainInput % 2 == 0) ? 2 : 1;
             classic = mainInput <= 2;
             clearOutput();
-            std::cout << "==== " << (classic ? "Classic " : "Custom ") << (numPlayers == 1 ? " Single-player" : " Two-player") << " ==== \n";
+            if (!classic) {
+                std::cout << "==== Custom" << (numPlayers == 1 ? " Single-player" : " Two-player") << " Setup Stage ==== \n";
+            }
             gridSize = setup(classic, baseShips);
+            clearOutput();
 			if (gridSize == EXIT_CODE) {
-                clearOutput();
                 continue;
 			}
+            std::cout << "==== " << (classic ? "Classic " : "Custom ") << (numPlayers == 1 ? " Single-player" : " Two-player") << " Ship Placement Stage ==== \n";
             if (shipPlacement(numPlayers, gridSize, classic, baseShips, player1, player2) == EXIT_CODE) {
                 clearOutput();
                 continue;
+            }
+            std::cout << "==== " << (classic ? "Classic " : "Custom ") << (numPlayers == 1 ? " Single-player" : " Two-player") << " ==== \n";
+            if (numPlayers == 1) {
+                playSingleplayer(player1, player2, baseShips, gridSize);
+            }
+            else {
+                playMultiplayer(player1, player2, gridSize);
             }
             break;
         case 5:
@@ -103,7 +113,11 @@ void trimAndToLower(std::string& s) {
 }
 
 void clearOutput(void) {
-    std::cout << "\033[2J\033[H" << std::flush;
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
 }
 
 int setup(bool classic, std::vector<Ship>& baseShips) {
@@ -124,7 +138,7 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
     return gridSize;
 }
 
-int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& const baseShips, PlayerManager& player1, PlayerManager& player2) {
+int shipPlacement(int players, int gridSize, bool classic, const std::vector<Ship>& baseShips, PlayerManager& player1, PlayerManager& player2) {
     int totalShips = baseShips.size();
     for (int i = 1; i <= players; i++) {
         PlayerManager player;
@@ -264,7 +278,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
         std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
         std::cout << "Board:\n";
         printPlacementBoard(placementBoard);
-		std::cout << " Player " + std::to_string(i) + " setup complete!\n";
+		std::cout << "\nPlayer " + std::to_string(i) + " setup complete!\n";
 		std::cout << "\nPress Enter to continue...";
         std::cin.get();
 		clearOutput(); // clear output so that the next player doesn't see the previous player's board
@@ -306,18 +320,22 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
     return 0;
 }
 
-void playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<Ship> baseShips, int gridSize) {
+int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<Ship>& baseShips, int gridSize) {
     int turn = 1;
-    std::deque<std::pair<std::pair<int, int>, std::pair<int, int>>> botAttackDeque;
-    while (true) {
+    std::deque<std::pair<std::pair<int, int>, std::pair<int, int>>> botAttackDeque = std::deque<std::pair<std::pair<int, int>, std::pair<int, int>>>();
+    int winner = 0;
+    while (winner == 0) {
         if (turn == 1) {
-			std::cout << "\n===== Player's Turn =====\n\n";
+			std::cout << "\n===== Player's Turn =====\n";
             std::cout << "\nBoard:\n";
-            printGameBoard(player.getDisplayBoard());
+            printGameBoard(bot.getDisplayBoard());
             std::cout << "\nShips:\n";
-            printShips(baseShips, player.getSunkList());
+            printShips(baseShips, bot.getSunkList());
 			std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
-            switch (player.attack(attackPos.first, attackPos.second)) {
+            if (attackPos.first == EXIT_CODE) {
+                return EXIT_CODE;
+            }
+            switch (bot.attack(attackPos.first, attackPos.second)) {
             case -1:
 				std::cout << "Invalid attack. Please try again.\n";
                 continue;
@@ -329,6 +347,221 @@ void playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vect
                 break;
             case 2:
 				std::cout << "Hit! You sunk a ship!\n";
+                if (bot.getShipsRemaining() == 0) {
+                    winner = 1;
+                }
+                break;
+            }
+            std::cout << "\nBoard:\n";
+            printGameBoard(bot.getDisplayBoard());
+            std::cout << "\nShips:\n";
+            printShips(baseShips, bot.getSunkList());
+        }
+        else {
+			std::cout << "\n===== Bot's Turn =====\n";
+            std::pair<int, int> attackPos;
+            int result = -1;
+            do {
+                if (botAttackDeque.empty()) {
+                    std::cout << "Empty..." << std::endl;
+                    attackPos = { randomInt(0, gridSize - 1), randomInt(0, gridSize - 1) };
+                    std::cout << "Attack: " << attackPos.first << " " << attackPos.second << std::endl;
+                    result = player.attack(attackPos.first, attackPos.second);
+                    std::cout << "Result: " << result << std::endl;
+                    if (result == 1) {
+                        // add adjacent positions
+                        switch(randomInt(0, 1)) { // randomize going up/down vs left/right first
+                        case 0: // up/down first
+                            // left and right
+                            if (randomInt(0, 1) == 0) { // left then right
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                                if (attackPos.second >  0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                            }
+                            else { // right then left
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                            }
+                            // up and down
+                            if (randomInt(0, 1) == 0) { // up then down
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                            }
+                            else { // down then up
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                            }
+                            break;
+                        case 1: // left/right first
+                            // up and down
+                            if (randomInt(0, 1) == 0) { // up then down
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                            }
+                            else { // down then up
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                            }
+                            // left and right
+                            if (randomInt(0, 1) == 0) { // left then right
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                            }
+                            else { // right then left
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                else {
+                    std::pair<std::pair<int, int>, std::pair<int, int>> nextAttack = botAttackDeque.front();
+                    botAttackDeque.pop_front();
+                    std::pair<int, int> prevPos = nextAttack.first;
+                    if (player.alreadySunk(prevPos.first, prevPos.second)) {
+                        continue;
+                    }
+                    attackPos = nextAttack.second;
+                    result = player.attack(attackPos.first, attackPos.second);
+                    if (result == 1) {
+                        // add same direction to the front and perpendicular to the back
+                        std::pair<int, int> diff = { attackPos.first - prevPos.first, attackPos.second - prevPos.second };
+                        if (diff.first == 1) { // down
+                            if (attackPos.first < gridSize - 1) {
+                                botAttackDeque.push_front({ attackPos, { attackPos.first + 1, attackPos.second } });
+                            }
+                            // left and right
+                            if (randomInt(0, 1) == 0) { // right then left
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                            }
+                            else { // left then right
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                            }
+                        }
+                        else if (diff.first == -1) { // up
+                            if (attackPos.first >  0) {
+                                botAttackDeque.push_front({ attackPos, { attackPos.first - 1, attackPos.second } });
+                            }
+                            // left and right
+                            if (randomInt(0, 1) == 0) { // right then left
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                            }
+                            else { // left then right
+                                if (attackPos.second > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second - 1} });
+                                }
+                                if (attackPos.second < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first, attackPos.second + 1} });
+                                }
+                            }
+                        }
+                        else if (diff.second == 1) { // right
+                            if (attackPos.second < gridSize - 1) {
+                                botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second + 1} });
+                            }
+                            // up and down
+                            if (randomInt(0, 1) == 0) { // down then up
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                            }
+                            else { // up then down
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                            }
+                        }
+                        else { // left
+                            if (attackPos.second > 0) {
+                                botAttackDeque.push_front({ attackPos, {attackPos.first, attackPos.second - 1} });
+                            }
+                            // up and down
+                            if (randomInt(0, 1) == 0) { // down then up
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                            }
+                            else { // up then down
+                                if (attackPos.first > 0) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first - 1, attackPos.second} });
+                                }
+                                if (attackPos.first < gridSize - 1) {
+                                    botAttackDeque.push_back({ attackPos, {attackPos.first + 1, attackPos.second} });
+                                }
+                            }
+                        }
+                    }
+                }
+            } while (result == -1);
+            
+            switch (result) {
+            case 0:
+				std::cout << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and missed!\n";
+				break;
+            case 1:
+				std::cout << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and hit your ship!\n";
+				break;
+            case 2:
+                std::cout << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and sunk your ship!\n";
+                if (player.getShipsRemaining() == 0) {
+                    winner = 2;
+                }
                 break;
             }
             std::cout << "\nBoard:\n";
@@ -336,17 +569,19 @@ void playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vect
             std::cout << "\nShips:\n";
             printShips(baseShips, player.getSunkList());
         }
-        else {
-			std::cout << "\n===== Bot's Turn =====\n";
-            std::pair<int, int> attackPos;
-            int result;
-            do {
-                result = player.attack(attackPos.first, attackPos.second);
-
-            } while (result == -1);
-        }
         turn = 3 - turn;
     }
+
+    if (winner == 1) {
+        std::cout << "\nYou Win!\n";
+    }
+    else {
+        std::cout << "\nThe Bot Wins!\n";
+    }
+    std::cout << "\nPress Enter to return to Main Menu...";
+    std::cin.get();
+    clearOutput();
+    return 0;
 }
 
 void playMultiplayer(PlayerManager& player1, PlayerManager& player2, int gridSize) {

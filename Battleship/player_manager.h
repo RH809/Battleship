@@ -17,6 +17,7 @@ private:
 
 public:
 	int getShipsRemaining() const;
+	bool alreadySunk(int r, int c);
 	const std::vector<bool>& getSunkList() const;
 	const std::vector<std::vector<char>>& getDisplayBoard() const;
 

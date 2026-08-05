@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 
 #include "player_manager.h"
@@ -21,6 +22,7 @@ void PlayerManager::setShips(std::vector<Ship>& const shipList) {
 // 1 = hit
 // 2 = sunk
 int PlayerManager::attack(int r, int c) {
+	std::cout << displayBoard.size() << " " << placementBoard.size() << std::endl;
 	if (displayBoard[r][c] != '-') {
 		return -1;
 	}
@@ -51,4 +53,8 @@ const std::vector<bool>& PlayerManager::getSunkList() const {
 
 const std::vector<std::vector<char>>& PlayerManager::getDisplayBoard() const {
 	return displayBoard;
+}
+
+bool PlayerManager::alreadySunk(int r, int c) {
+	return displayBoard[r][c] == 'x';
 }
