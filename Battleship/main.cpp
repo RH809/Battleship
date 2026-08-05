@@ -413,16 +413,16 @@ int getIntegerInput(std::string prompt, int min, int max, bool allowExit, std::s
             std::size_t pos;
             input = std::stoi(line, &pos);
             if (pos != line.size()) {
-                std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or " + exitString : "") + ".\n";
+                std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n";
                 continue;
             }
         }
         catch (...) {
-            std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or " + exitString : "") + ".\n";
+            std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n";
             continue;
         }
 		if (input < min || input > max) {
-			std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or " + exitString : "") + ".\n";
+			std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n";
 			continue;
 		}
         return input;
@@ -470,16 +470,16 @@ std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, 
             std::string second = line.substr(pos);
             input.second = std::stoi(second, &pos);
 			if (pos != second.size()) {
-				std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or " + exitString : "") + ".\n";
+				std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n";
 				continue;
 			}
         }
         catch (...) {
-            std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or " + exitString : "") + ".\n";
+            std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n";
             continue;
         }
         if (input.first < min1 || input.first > max1 || input.second < min2 || input.second > max2) {
-            std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or " + exitString : "") + ".\n";
+            std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n";
             continue;
         }
         return input;
