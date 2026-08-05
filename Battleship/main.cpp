@@ -11,8 +11,8 @@
 #define RESET "\033[0m"
 #define RED "\033[31m"
 #define GREEN "\033[32m"
-#define GRAY "\033[90m"
-#define BLACK "\033[30m"
+#define YELLOW "\033[33m"
+#define BLUE   "\033[34m"
 
 #define SHIP_ROW_LENGTH (5)
 #define EXIT_CODE (-1)
@@ -46,7 +46,7 @@ int main()
     bool classic = true;
     std::vector<Ship> baseShips = std::vector<Ship>();
     PlayerManager player1, player2;
-    std::string mainPrompt = "\n===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Create Custom Ship\n[6] Exit\nEnter your choice: ";
+    std::string mainPrompt = "===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Create Custom Ship\n[6] Exit\nEnter your choice: ";
     while (true) {
         int mainInput = getIntegerInput(mainPrompt, 1, 6);
         switch (mainInput) {
@@ -60,9 +60,11 @@ int main()
             std::cout << "==== " << (classic ? "Classic " : "Custom ") << (numPlayers == 1 ? " Single-player" : " Two-player") << " ==== \n";
             gridSize = setup(classic, baseShips);
 			if (gridSize == EXIT_CODE) {
+                clearOutput();
                 continue;
 			}
             if (shipPlacement(numPlayers, gridSize, classic, baseShips, player1, player2) == EXIT_CODE) {
+                clearOutput();
                 continue;
             }
             break;
@@ -300,6 +302,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
 }
 
 void printShip(Ship ship) {
+    std::cout << BLUE;
     for (int i = 0; i < ship.getHeight(); i++) {
         for (int j = 0; j < ship.getWidth(); j++) {
             if (ship.getShipGrid()[i][j]) {
@@ -312,22 +315,39 @@ void printShip(Ship ship) {
         }
         std::cout << "\n";
     }
+    std::cout << RESET;
 }
 
 void printBoard(std::vector<std::vector<char>>& const board) {
     int n = board.size();
 	std::cout << "  ";
-    	for (int i = 0; i < n; i++) {
+    std::cout << YELLOW;
+    for (int i = 0; i < n; i++) {
 		std::cout << i << " ";
+		if (n > 10 && i < 10) {
+			std::cout << " ";
+		}
 	}
+    std::cout << RESET;
 	std::cout << "\n";
 	for (int i = 0; i < n; i++) {
-		std::cout << i << " ";
+		std::cout << YELLOW << i << " " << RESET;
+        if (n > 10 && i < 10) {
+            std::cout << " ";
+        }
 		for (int j = 0; j < n; j++) {
+            if (board[i][j] != '.') {
+                std::cout << BLUE;
+            }
 			std::cout << board[i][j] << " ";
+            if (n > 10) {
+                std::cout << " ";
+            }
+            std::cout << RESET;
 		}
 		std::cout << "\n";
 	}
+    std::cout << RESET;
 }
 
 void printShips(std::vector<Ship>& const ships) {
