@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <deque>
 #include <iostream>
 #include <random>
 #include <string>
@@ -307,6 +308,7 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
 
 void playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<Ship> baseShips, int gridSize) {
     int turn = 1;
+    std::deque<std::pair<std::pair<int, int>, std::pair<int, int>>> botAttackDeque;
     while (true) {
         if (turn == 1) {
 			std::cout << "\n===== Player's Turn =====\n\n";
@@ -336,6 +338,12 @@ void playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vect
         }
         else {
 			std::cout << "\n===== Bot's Turn =====\n";
+            std::pair<int, int> attackPos;
+            int result;
+            do {
+                result = player.attack(attackPos.first, attackPos.second);
+
+            } while (result == -1);
         }
         turn = 3 - turn;
     }
