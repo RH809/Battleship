@@ -9,3 +9,7 @@ void PlayerManager::setPlacementBoard(std::vector<std::vector<char>>& const boar
 		std::vector<char>(board[0].size(), '-')
 	);
 }
+
+void PlayerManager::setShips(std::vector<Ship>& const shipList) {
+	ships = shipList;
+}

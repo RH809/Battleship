@@ -24,12 +24,18 @@
     <ClCompile Include="custom_ship.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="player_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ship.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="custom_ship.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="player_manager.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

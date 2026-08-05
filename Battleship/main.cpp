@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -16,29 +17,36 @@
 #define SHIP_ROW_LENGTH (5)
 #define EXIT_CODE (-1)
 
-std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1, 0, 0), Ship(4, 1, 0, 0), Ship(5, 1, 0, 0) };
 
+int randomInt(int, int);
 void trimAndToLower(std::string& s);
-
+void clearOutput(void);
 int setup(bool, std::vector<Ship>&);
 int shipPlacement(int, int, bool, std::vector<Ship>& const, PlayerManager&, PlayerManager&);
 void printShip(Ship ship);
 void printBoard(std::vector<std::vector<char>>& const);
 void printShips(std::vector<Ship>& const);
 void printShips(std::vector<Ship>& const, std::vector<bool>& const);
-int getIntegerInput(std::string, int, int, bool, std::string);
+int getIntegerInput(std::string, int, int, bool allowExit = false, std::string exitString = "exit");
 int getIntegerInput(int, int);
-std::pair<int, int> getTwoIntegersInput(std::string, int, int, int, int, bool, std::string);
+std::pair<int, int> getTwoIntegersInput(std::string, int, int, int, int, bool allowExit = false, std::string exitString = "exit");
+
+
+std::mt19937 gen(std::random_device{}());
+std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1, 0, 0), Ship(4, 1, 0, 0), Ship(5, 1, 0, 0) };
 
 int main()
 {
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+    clearOutput();
     std::cout << "Welcome to Battleship!\n";
     int numPlayers = 1;
     int gridSize = 10;
     bool classic = true;
     std::vector<Ship> baseShips = std::vector<Ship>();
     PlayerManager player1, player2;
-    std::string mainPrompt = "\n===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Create Custom Ship\n[6] Exit";
+    std::string mainPrompt = "\n===== Main Menu =====\n[1] Classic Single-player\n[2] Classic Two-player\n[3] Custom Single-player\n[4] Custom Two-player\n[5] Create Custom Ship\n[6] Exit\nEnter your choice: ";
     while (true) {
         int mainInput = getIntegerInput(mainPrompt, 1, 5);
         switch (mainInput) {
@@ -62,6 +70,11 @@ int main()
     }   
 }
 
+int randomInt(int min, int max) {
+    std::uniform_int_distribution<> dist(min, max);
+    return dist(gen);
+}
+
 void trimAndToLower(std::string& s) {
     const std::string whitespace = " \t\n\r\f\v";
 
@@ -76,6 +89,10 @@ void trimAndToLower(std::string& s) {
 
     std::transform(s.begin(), s.end(), s.begin(),
         [](unsigned char c) { return std::tolower(c); });
+}
+
+void clearOutput(void) {
+    std::cout << "\033[2J\033[H" << std::flush;
 }
 
 int setup(bool classic, std::vector<Ship>& baseShips) {
@@ -205,28 +222,43 @@ int shipPlacement(int players, int gridSize, bool classic, std::vector<Ship>& co
         }
         player.setPlacementBoard(placementBoard);
         player.setShips(ships);
+        std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
+        std::cout << "Board:\n";
+        printBoard(placementBoard);
+		std::cout << " Player " + std::to_string(i) + " setup complete!\n";
+		std::cout << "\nPress Enter to continue...";
+        std::cin.get();
+		clearOutput(); // clear output so that the next player doesn't see the previous player's board
     }
 
     if (players == 1) {
+        // Bot setup
         // Bot is player2
         std::vector<Ship> ships = baseShips;
         std::vector<std::vector<char>> placementBoard = std::vector<std::vector<char>>(
             gridSize, std::vector<char>(gridSize, '.')
         );
+        // Randomize orientation and position
         for (Ship ship : ships) {
             do {
-                int transforms = rand() % 3;
+                int transforms = randomInt(0, 2);
 				for (int i = 0; i < transforms; i++) {
-                    switch (rand() % 4) {
-                        
+                    switch (randomInt(0, 3)) {
+                    case 0:
+                        ship.rotateClockwise();
+                    case 1:
+                        ship.rotateCounterClockwise();
+                    case 2:
+                        ship.flipHorizontal();
+                    case 3:
+                        ship.flipVertical();
                     }
 				}
-                ship.setPosition(rand() % gridSize, rand() % gridSize);
+                ship.setPosition(randomInt(0, gridSize - ship.getHeight() - 1), randomInt(0, gridSize - ship.getWidth() - 1));
             } while (!ship.addToBoard(placementBoard));
         }
 		player2.setPlacementBoard(placementBoard);
 		player2.setShips(ships);
-        // bot setup
     }
     return 0;
 }
@@ -326,7 +358,7 @@ void printShips(std::vector<Ship>& const ships, std::vector<bool>& const placed)
     }
 }
 
-int getIntegerInput(std::string prompt, int min, int max, bool allowExit = false, std::string exitString = "exit") {
+int getIntegerInput(std::string prompt, int min, int max, bool allowExit, std::string exitString) {
     int input;
     while (true) {
         std::cout << prompt;
@@ -381,7 +413,7 @@ int getIntegerInput(int min, int max) {
     return input;
 }
 
-std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, int min2, int max2, bool allowExit = false, std::string exitString = "exit") {
+std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, int min2, int max2, bool allowExit, std::string exitString) {
     std::pair<int, int> input;
     while (true) {
         std::cout << prompt;

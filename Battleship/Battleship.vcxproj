@@ -141,10 +141,12 @@
   <ItemGroup>
     <ClCompile Include="custom_ship.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="player_manager.cpp" />
     <ClCompile Include="ship.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="custom_ship.h" />
+    <ClInclude Include="player_manager.h" />
     <ClInclude Include="ship.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
