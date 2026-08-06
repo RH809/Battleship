@@ -36,7 +36,7 @@ void printShipCreation(const std::vector<std::vector<char>>&);
 bool isValidShip(std::vector<std::vector<char>>);
 void traverse(std::vector<std::vector<char>>&, int, int);
 CustomShip buildShip(const std::vector<std::vector<char>>);
-bool importShip(std::string path, CustomShip&);
+bool importShip(std::string path, CustomShip&, int);
 int shipPlacement(int, int, bool, const std::vector<Ship>&, PlayerManager&, PlayerManager&);
 int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
 int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
@@ -142,20 +142,20 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
         baseShips = classicShips;
     }
     else {
-		gridSize = getIntegerInput("Enter grid size (" + std::to_string(MIN_GRID_SIZE) + "-" + std::to_string(MAX_GRID_SIZE) + ") or 'exit' to return to Main Menu : ", MIN_GRID_SIZE, MAX_GRID_SIZE, true);
+		gridSize = getIntegerInput("Enter grid size (" + std::to_string(MIN_GRID_SIZE) + "-" + std::to_string(MAX_GRID_SIZE) + ") or 'exit' to return to Main Menu: ", MIN_GRID_SIZE, MAX_GRID_SIZE, true);
         if (gridSize == EXIT_CODE) {
             return EXIT_CODE;
         }
         // input ships
         baseShips = std::vector<Ship>();
         while (true) {
-            int setupInput = getIntegerInput("\n===== Setup Menu =====\n[1] View/Remove Ships\n[2] Add Ship\n[3] Confirm Ship List\n[4] Return to Main Menu\nEnter your choice:", 1, 4);
+            int setupInput = getIntegerInput("\n===== Setup Menu =====\n[1] View/Remove Ships\n[2] Add Ship\n[3] Confirm Ship List\n[4] Return to Main Menu\nEnter your choice: ", 1, 4);
             if (setupInput == 4) {
                 return EXIT_CODE;
             }
             else if (setupInput == 3) {
                 if (baseShips.empty()) {
-                    std::cout << RED << "Ship list is empty.\n";
+                    std::cout << RED << "Ship list is empty.\n" << RESET;
                 }
                 else {
                     break;
@@ -175,24 +175,24 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
                     }
                     else {
                         CustomShip ship = CustomShip(0, 0, 0, 0, {});
-                        if (!importShip(shipPath + "/" + name + ".txt", ship)) {
+                        if (!importShip(shipPath + "/" + name + ".txt", ship, gridSize)) {
                             std::cout << RED << "There was an error adding ship '" << name << "'.\n" << RESET;
                         }
                         else {
                             baseShips.push_back(ship);
                             std::cout << GREEN << "Added ship '" << name << "' successfully!\n" << RESET;
+                            break;
                         }
                     }
                 }
             }
             else if (setupInput == 1) {
                 if (baseShips.empty()) {
-                    std::cout << "No ships added.\n";
+                    std::cout << YELLOW << "No ships added.\n" << RESET;
                 }
                 else {
-                    std::cout << "Ships:\n";
+                    std::cout << "\nShips:\n";
                     printShips(baseShips);
-                    std::cout << "\n";
                     int removeInput = getIntegerInput("Enter the ship number to remove (1-" + std::to_string(baseShips.size()) + ") or 'cancel' to return to option selection: ", 1, baseShips.size(), true, "cancel");
                     if (removeInput == EXIT_CODE) {
                         continue;
@@ -202,9 +202,9 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
                 }
             }
         }
-        std::cout << GREEN << "Ship list confirmed!\n" << RESET;
+        std::cout << GREEN << "\nShip list confirmed!\n" << RESET;
         printShips(baseShips);
-        std::cout << "\nPress Enter to return to continue...";
+        std::cout << "Press Enter to return to continue...";
         std::cin.get();
     }
 	for (int i = 0; i < baseShips.size(); i++) {
@@ -214,7 +214,7 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
 }
 
 void shipCreation() {
-    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (" + std::to_string(MIN_SHIP_SIZE) + "-" + std::to_string(MAX_SHIP_SIZE) + ") of the ship(width height) or 'exit' to return to Main Menu : ",
+    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (" + std::to_string(MIN_SHIP_SIZE) + "-" + std::to_string(MAX_SHIP_SIZE) + ") of the ship(width height) or 'exit' to return to Main Menu: ",
         MIN_SHIP_SIZE, MAX_SHIP_SIZE, MIN_SHIP_SIZE, MAX_SHIP_SIZE, true);
     std::vector<std::vector<char>> shipGrid = std::vector<std::vector<char>>(
         dimensions.second, std::vector<char>(dimensions.first, '.')
@@ -376,7 +376,7 @@ CustomShip buildShip(const std::vector<std::vector<char>> shipGrid) {
     return newShip;
 }
 
-bool importShip(std::string path, CustomShip& ship) {
+bool importShip(std::string path, CustomShip& ship, int gridSize) {
     std::fstream file(path);
     std::string line;
     std::getline(file, line);
@@ -394,7 +394,7 @@ bool importShip(std::string path, CustomShip& ship) {
     catch (...) {
         return false;
     }
-    if (width < MIN_SHIP_SIZE || width > MAX_SHIP_SIZE || height < MIN_SHIP_SIZE || height > MAX_SHIP_SIZE) {
+    if (width < MIN_SHIP_SIZE || width > MAX_SHIP_SIZE || height < MIN_SHIP_SIZE || height > MAX_SHIP_SIZE || width > gridSize || height > gridSize) {
         return false;
     }
     std::vector<std::pair<int, int>> exclusions = std::vector<std::pair<int, int>>();
@@ -487,7 +487,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
                             std::cout << "-";
                         }
                         std::cout << "\n";
-                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90 Degrees Clockwise\n[2] Rotate 90 Degrees Counter - Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Orientation\n[6] Return to Ship Selection\nEnter your choice : ", 1, 6);
+                        transformInput = getIntegerInput("Transform the ship:\n[1] Rotate 90 Degrees Clockwise\n[2] Rotate 90 Degrees Counter-Clockwise\n[3] Flip Horizontally\n[4] Flip Vertically\n[5] Confirm Orientation\n[6] Return to Ship Selection\nEnter your choice: ", 1, 6);
                         if (transformInput >= 5) {
                             break;
                         }
@@ -1019,7 +1019,7 @@ void printShips(const std::vector<Ship>& ships) {
             std::cout << "[" + std::to_string(j + 1) + "] ";
             for (int k = 0; k < ships[j].getWidth(); k++) {
                 if (ships[j].getShipGrid()[0][k]) {
-                    std::cout << "o";
+                    std::cout << BLUE << "o" << RESET;
                 }
                 else {
                     std::cout << " ";
@@ -1041,7 +1041,7 @@ void printShips(const std::vector<Ship>& ships) {
                 else {
                     for (int l = 0; l < ships[k].getWidth(); l++) {
                         if (ships[k].getShipGrid()[j][l]) {
-                            std::cout << "o";
+                            std::cout << BLUE << "o" << RESET;
                         }
                         else {
                             std::cout << " ";

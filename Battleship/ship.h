@@ -17,6 +17,7 @@ protected:
 
 public:
 	Ship(int w, int h, int _r, int _c);
+	virtual ~Ship() = default;
 	int getWidth() const;
 	int getHeight() const;
 	int getR() const;

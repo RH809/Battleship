@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "custom_ship.h"
 
 CustomShip::CustomShip(int w, int h, int _x, int _y, const std::vector<std::pair<int, int>>& ex) : Ship(w, h, _x, _y), exclusions(ex) {
@@ -77,12 +79,13 @@ void CustomShip::rotateClockwise() {
 	width = height;
 	height = temp;
 
-	for (std::pair<int, int> exclusion : exclusions) {
+	for (std::pair<int, int>& exclusion : exclusions) {
 		int oldR = exclusion.first;
 		int oldC = exclusion.second;
 
 		exclusion.first = oldC;
 		exclusion.second = width - 1 - oldR;
+		std::cout << oldR << " " << oldC << " -> " << exclusion.first << " " << exclusion.second << std::endl;
 	}
 
 	generateShipGrid();
@@ -93,7 +96,7 @@ void CustomShip::rotateCounterClockwise() {
 	width = height;
 	height = temp;
 
-	for (std::pair<int, int> exclusion : exclusions) {
+	for (std::pair<int, int>& exclusion : exclusions) {
 		int oldR = exclusion.first;
 		int oldC = exclusion.second;
 
@@ -105,7 +108,7 @@ void CustomShip::rotateCounterClockwise() {
 }
 
 void CustomShip::flipHorizontal() {
-	for (std::pair<int, int> exclusion : exclusions) {
+	for (std::pair<int, int>& exclusion : exclusions) {
 		exclusion.second = width - 1 - exclusion.second;
 	}
 
@@ -113,7 +116,7 @@ void CustomShip::flipHorizontal() {
 }
 
 void CustomShip::flipVertical() {
-	for (std::pair<int, int> exclusion : exclusions) {
+	for (std::pair<int, int>& exclusion : exclusions) {
 		exclusion.first = height - 1 - exclusion.first;
 	}
 
