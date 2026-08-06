@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Ships">
+      <UniqueIdentifier>{2d8fa61e-ad5f-4105-8257-8d8d054728e2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,6 +27,9 @@
     <ClCompile Include="custom_ship.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="player_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ship.h">
@@ -32,5 +38,13 @@
     <ClInclude Include="custom_ship.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="player_manager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="test.txt">
+      <Filter>Ships</Filter>
+    </Text>
   </ItemGroup>
 </Project>

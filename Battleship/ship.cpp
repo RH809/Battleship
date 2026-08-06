@@ -1,6 +1,8 @@
+#include <iostream>
+
 #include "ship.h"
 
-Ship::Ship(int w, int h, int _x, int _y) : width(w), height(h), x(_x), y(_y) {
+Ship::Ship(int w, int h, int _r, int _c) : width(w), height(h), r(_r), c(_c) {
 	shipNum = 0;
 	numPoints = (w * h);
 	generateShipGrid();
@@ -8,20 +10,23 @@ Ship::Ship(int w, int h, int _x, int _y) : width(w), height(h), x(_x), y(_y) {
 
 int Ship::getWidth() const { return width; }
 int Ship::getHeight() const { return height; }
-int Ship::getX() const { return x; }
-int Ship::getY() const { return y; }
-void Ship::setPosition(int _x, int _y) { x = _x; y = _y; }
+int Ship::getR() const { return r; }
+int Ship::getC() const { return c; }
+void Ship::setPosition(int _r, int _c) { r = _r; c = _c; }
 void Ship::setShipNum(int num) { shipNum = num; }
+int Ship::getShipNum() const { return shipNum; }
+
+std::vector<std::vector<bool>> Ship::getShipGrid() const { return shipGrid; }
 
 bool Ship::isValidPosition(const std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			int boardX = x + j;
-			int boardY = y + i;
-			if (boardY < 0 || boardY >= board.size() || boardX < 0 || boardX >= board[0].size()) {
+			int boardR = r + i;
+			int boardC = c + j;
+			if (boardR < 0 || boardR >= board.size() || boardC < 0 || boardC >= board[0].size()) {
 				return false;
 			}
-			if (board[boardY][boardX] != '.') {
+			if (board[boardR][boardC] != '.') {
 				return false;
 			}
 		}
@@ -35,7 +40,7 @@ bool Ship::addToBoard(std::vector<std::vector<char>>& board) const {
 	}
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			board[y + i][x + j] = '0' + shipNum;
+			board[r + i][c + j] = '0' + shipNum;
 		}
 	}
 	return true;
@@ -44,17 +49,15 @@ bool Ship::addToBoard(std::vector<std::vector<char>>& board) const {
 void Ship::removeFromBoard(std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			board[y + i][x + j] = '.';
+			board[r + i][c + j] = '.';
 		}
 	}
 }
 
-bool Ship::hit(int hitX, int hitY, std::vector<std::vector<char>>& board) {
-	if (!(hitX >= x && hitX < x + width && hitY >= y && hitY < y + height) || board[hitX][hitY] != '0' + shipNum) {
-		return false;
-	}
+bool Ship::hit(int hitR, int hitC, std::vector<std::vector<char>>& board) {
 	numPoints--;
-	board[hitX][hitY] = '*';
+	//std::cout << numPoints << " " << hitR << " " << hitC << std::endl;
+	board[hitR][hitC] = 'o';
 	if (numPoints == 0) {
 		sink(board);
 		return true;
@@ -65,7 +68,8 @@ bool Ship::hit(int hitX, int hitY, std::vector<std::vector<char>>& board) {
 void Ship::sink(std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			board[y + i][x + j] = 'x';
+			std::cout << (r + i) << " " << (c + j) << std::endl;
+			board[r + i][c + j] = 'x';
 		}
 	}
 }

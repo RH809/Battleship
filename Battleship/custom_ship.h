@@ -15,7 +15,7 @@ protected:
 	void generateShipGrid() override;
 
 public:
-	CustomShip(int w, int h, int _x, int _y, const std::vector<std::pair<int, int>>& ex);
+	CustomShip(int w, int h, int _r, int _c, const std::vector<std::pair<int, int>>& ex);
 
 	void rotateClockwise() override;
 	void rotateCounterClockwise() override;
@@ -24,7 +24,7 @@ public:
 
 	bool addToBoard(std::vector<std::vector<char>>& board) const override;
 	void removeFromBoard(std::vector<std::vector<char>>& board) const override;
-	bool hit(int hitX, int hitY, std::vector<std::vector<char>>& board) override;
+	bool hit(int hitR, int hitC, std::vector<std::vector<char>>& board) override;
 };
 
 #endif	
