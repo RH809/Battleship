@@ -6,7 +6,7 @@
 class Ship {
 protected:
 	int width, height;
-	int x, y;
+	int r, c;
 	int numPoints;
 	int shipNum;
 	std::vector<std::vector<bool>> shipGrid;
@@ -16,12 +16,12 @@ protected:
 	virtual void generateShipGrid();
 
 public:
-	Ship(int w, int h, int _x, int _y);
+	Ship(int w, int h, int _r, int _c);
 	int getWidth() const;
 	int getHeight() const;
-	int getX() const;
-	int getY() const;
-	void setPosition(int _x, int _y);
+	int getR() const;
+	int getC() const;
+	void setPosition(int _r, int _c);
 	void setShipNum(int num);
 	int getShipNum() const;
 

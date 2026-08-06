@@ -9,12 +9,12 @@ bool CustomShip::isValidPosition(const std::vector<std::vector<char>>& board) co
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			if (shipGrid[i][j]) {
-				int boardX = x + j;
-				int boardY = y + i;
-				if (boardY < 0 || boardY >= board.size() || boardX < 0 || boardX >= board[0].size()) {
+				int boardR = r + i;
+				int boardC = c + j;
+				if (boardR < 0 || boardR >= board.size() || boardC < 0 || boardC >= board[0].size()) {
 					return false;
 				}
-				if (board[boardY][boardX] != '.') {
+				if (board[boardR][boardC] != '.') {
 					return false;
 				}
 			}
@@ -31,7 +31,7 @@ bool CustomShip::addToBoard(std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			if (shipGrid[i][j]) {
-				board[y + i][x + j] = '0' + shipNum;
+				board[r + i][c + j] = '0' + shipNum;
 			}
 		}
 	}
@@ -42,19 +42,19 @@ void CustomShip::removeFromBoard(std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			if (shipGrid[i][j]) {
-				board[y + i][x + j] = '.';
+				board[r + i][c + j] = '.';
 			}
 		}
 	}
 }
 
-bool CustomShip::hit(int hitX, int hitY, std::vector<std::vector<char>>& board) {
-	if (!(hitX >= x && hitX < x + width && hitY >= y && hitY < y + height) || !shipGrid[hitX - x][hitY - y] ||
-			board[hitX][hitY] != '0' + shipNum) {
+bool CustomShip::hit(int hitR, int hitC, std::vector<std::vector<char>>& board) {
+	if (!(hitR >= r && hitR < r + height && hitC >= c && hitC < c + width) || !shipGrid[hitR - r][hitC - c] ||
+			board[hitR][hitC] != '0' + shipNum) {
 		return false;
 	}
 	numPoints--;
-	board[hitX][hitY] = '*';
+	board[hitR][hitC] = '*';
 	if (numPoints == 0) {
 		sink(board);
 		return true;
@@ -66,7 +66,7 @@ void CustomShip::sink(std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			if (shipGrid[i][j]) {
-				board[y + i][x + j] = 'x';
+				board[r + i][c + j] = 'x';
 			}
 		}
 	}

@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-
 #include "ship.h"
 #include "custom_ship.h"
 #include "player_manager.h"
@@ -14,11 +13,10 @@
 #define RED "\033[31m"
 #define GREEN "\033[32m"
 #define YELLOW "\033[33m"
-#define BLUE   "\033[34m"
+#define BLUE "\033[34m"
 
 #define SHIP_ROW_LENGTH (5)
 #define EXIT_CODE (-1)
-
 
 int randomInt(int, int);
 void trimAndToLower(std::string& s);
@@ -44,7 +42,7 @@ std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1
 int main()
 {
     clearOutput();
-    std::cout << "Welcome to Battleship!\n";
+    std::cout << RESET << "Welcome to Battleship!\n";
     int numPlayers = 1;
     int gridSize = 10;
     bool classic = true;
@@ -141,13 +139,7 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
 int shipPlacement(int players, int gridSize, bool classic, const std::vector<Ship>& baseShips, PlayerManager& player1, PlayerManager& player2) {
     int totalShips = baseShips.size();
     for (int i = 1; i <= players; i++) {
-        PlayerManager player;
-		if (i == 1) {
-			player = player1;
-		}
-		else {
-			player = player2;
-		}
+        PlayerManager& player = (i == 1) ? player1 : player2;
         std::vector<Ship> ships = baseShips;
 		std::vector<bool> placed(totalShips, false);
         std::vector<std::vector<char>> placementBoard = std::vector<std::vector<char>>(
@@ -249,11 +241,11 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
                         std::cout << "-";
                     }
                     std::cout << "\n";
-                    shipPos = getTwoIntegersInput("Enter the position to place the ship (row col) or 'cancel' to return to ship selection: ", 0, gridSize - 1, 0, gridSize - 1, true, "cancel");
+                    shipPos = getTwoIntegersInput("Enter the position to place the ship (row col of the top left point) or 'cancel' to return to ship selection: ", 0, gridSize - 1, 0, gridSize - 1, true, "cancel");
 					if (shipPos.first == EXIT_CODE) {
 						break;
 					}
-					ships[placementInput - 1].setPosition(shipPos.second, shipPos.first);
+					ships[placementInput - 1].setPosition(shipPos.first, shipPos.second);
                     if (ships[placementInput - 1].addToBoard(placementBoard)) {
                         placed[placementInput - 1] = true;
                         shipsPlaced++;
@@ -271,6 +263,8 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
             else {
                 ships[placementInput - 1].removeFromBoard(placementBoard);
                 placed[placementInput - 1] = false;
+                shipsPlaced--;
+                std::cout << "Ship " + std::to_string(placementInput) + " removed successfully!\n";
             }
         }
         player.setPlacementBoard(placementBoard);
@@ -292,7 +286,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
             gridSize, std::vector<char>(gridSize, '.')
         );
         // Randomize orientation and position
-        for (Ship ship : ships) {
+        for (Ship& ship : ships) {
             do {
                 int transforms = randomInt(0, 2);
 				for (int i = 0; i < transforms; i++) {
@@ -311,11 +305,16 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
                         break;
                     }
 				}
-                ship.setPosition(randomInt(0, gridSize - ship.getWidth() - 1), randomInt(0, gridSize - ship.getHeight() - 1));
+                ship.setPosition(randomInt(0, gridSize - ship.getHeight() - 1), randomInt(0, gridSize - ship.getWidth() - 1));
+                std::cout << ship.getR() << " " << ship.getC() << std::endl;
             } while (!ship.addToBoard(placementBoard));
         }
 		player2.setPlacementBoard(placementBoard);
 		player2.setShips(ships);
+        std::cout << std::endl;
+        for (Ship ship : ships) {
+            std::cout << ship.getR() << " " << ship.getC() << std::endl;
+        }
     }
     return 0;
 }
@@ -337,16 +336,16 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             }
             switch (bot.attack(attackPos.first, attackPos.second)) {
             case -1:
-				std::cout << "Invalid attack. Please try again.\n";
+				std::cout << YELLOW << "Invalid attack. Please try again.\n";
                 continue;
             case 0:
-                std::cout << "Miss!\n";
+                std::cout << YELLOW << "Miss!\n" << RESET;
                 break;
             case 1:
-				std::cout << "Hit!\n";
+				std::cout << YELLOW << "Hit!\n" << RESET;
                 break;
             case 2:
-				std::cout << "Hit! You sunk a ship!\n";
+				std::cout << YELLOW << "Hit! You sunk a ship!\n" << RESET;
                 if (bot.getShipsRemaining() == 0) {
                     winner = 1;
                 }
@@ -363,11 +362,8 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             int result = -1;
             do {
                 if (botAttackDeque.empty()) {
-                    std::cout << "Empty..." << std::endl;
                     attackPos = { randomInt(0, gridSize - 1), randomInt(0, gridSize - 1) };
-                    std::cout << "Attack: " << attackPos.first << " " << attackPos.second << std::endl;
                     result = player.attack(attackPos.first, attackPos.second);
-                    std::cout << "Result: " << result << std::endl;
                     if (result == 1) {
                         // add adjacent positions
                         switch(randomInt(0, 1)) { // randomize going up/down vs left/right first
@@ -552,13 +548,13 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             
             switch (result) {
             case 0:
-				std::cout << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and missed!\n";
+				std::cout << YELLOW << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and missed!\n" << RESET;
 				break;
             case 1:
-				std::cout << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and hit your ship!\n";
+				std::cout << YELLOW << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and hit your ship!\n" << RESET;
 				break;
             case 2:
-                std::cout << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and sunk your ship!\n";
+                std::cout << YELLOW << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and sunk your ship!\n" << RESET;
                 if (player.getShipsRemaining() == 0) {
                     winner = 2;
                 }
@@ -569,14 +565,18 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             std::cout << "\nShips:\n";
             printShips(baseShips, player.getSunkList());
         }
+        if (winner == 0) {
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+        }
         turn = 3 - turn;
     }
 
     if (winner == 1) {
-        std::cout << "\nYou Win!\n";
+        std::cout << YELLOW << "\nYou Win!\n" << RESET;
     }
     else {
-        std::cout << "\nThe Bot Wins!\n";
+        std::cout << YELLOW << "\nThe Bot Wins!\n" << RESET;
     }
     std::cout << "\nPress Enter to return to Main Menu...";
     std::cin.get();

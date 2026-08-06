@@ -22,7 +22,6 @@ void PlayerManager::setShips(std::vector<Ship>& const shipList) {
 // 1 = hit
 // 2 = sunk
 int PlayerManager::attack(int r, int c) {
-	std::cout << displayBoard.size() << " " << placementBoard.size() << std::endl;
 	if (displayBoard[r][c] != '-') {
 		return -1;
 	}
