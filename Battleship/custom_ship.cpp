@@ -49,12 +49,8 @@ void CustomShip::removeFromBoard(std::vector<std::vector<char>>& board) const {
 }
 
 bool CustomShip::hit(int hitR, int hitC, std::vector<std::vector<char>>& board) {
-	if (!(hitR >= r && hitR < r + height && hitC >= c && hitC < c + width) || !shipGrid[hitR - r][hitC - c] ||
-			board[hitR][hitC] != '0' + shipNum) {
-		return false;
-	}
 	numPoints--;
-	board[hitR][hitC] = '*';
+	board[hitR][hitC] = 'o';
 	if (numPoints == 0) {
 		sink(board);
 		return true;
@@ -78,11 +74,11 @@ void CustomShip::rotateClockwise() {
 	height = temp;
 
 	for (std::pair<int, int> exclusion : exclusions) {
-		int oldX = exclusion.first;
-		int oldY = exclusion.second;
+		int oldR = exclusion.first;
+		int oldC = exclusion.second;
 
-		exclusion.second = oldX;
-		exclusion.first = width - 1 - oldY;
+		exclusion.first = oldC;
+		exclusion.second = width - 1 - oldR;
 	}
 
 	generateShipGrid();
@@ -94,11 +90,11 @@ void CustomShip::rotateCounterClockwise() {
 	height = temp;
 
 	for (std::pair<int, int> exclusion : exclusions) {
-		int oldX = exclusion.first;
-		int oldY = exclusion.second;
+		int oldR = exclusion.first;
+		int oldC = exclusion.second;
 
-		exclusion.first = oldY;
-		exclusion.second = height - 1 - oldX;
+		exclusion.first = height - 1 - oldC;
+		exclusion.second = oldR;
 	}
 
 	generateShipGrid();
@@ -106,7 +102,7 @@ void CustomShip::rotateCounterClockwise() {
 
 void CustomShip::flipHorizontal() {
 	for (std::pair<int, int> exclusion : exclusions) {
-		exclusion.first = width - 1 - exclusion.first;
+		exclusion.second = width - 1 - exclusion.second;
 	}
 
 	generateShipGrid();
@@ -114,7 +110,7 @@ void CustomShip::flipHorizontal() {
 
 void CustomShip::flipVertical() {
 	for (std::pair<int, int> exclusion : exclusions) {
-		exclusion.second = height - 1 - exclusion.second;
+		exclusion.first = height - 1 - exclusion.first;
 	}
 
 	generateShipGrid();
@@ -127,7 +123,7 @@ void CustomShip::generateShipGrid() {
 	);
 
 	for (std::pair<int, int> exclusion : exclusions) {
-		shipGrid[exclusion.second][exclusion.first] = false;
+		shipGrid[exclusion.first][exclusion.second] = false;
 	}
 }
 

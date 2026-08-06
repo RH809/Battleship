@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <queue>
 #include <random>
 #include <string>
 #include <vector>
@@ -38,13 +39,13 @@ std::pair<int, int> getTwoIntegersInput(std::string, int, int, int, int, bool al
 
 
 std::mt19937 gen(std::random_device{}());
-std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1, 0, 0), Ship(4, 1, 0, 0), Ship(5, 1, 0, 0) };
-
+std::vector<Ship> const classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1, 0, 0), Ship(4, 1, 0, 0), Ship(5, 1, 0, 0) };
+std::string const shipPath = "Ships/";
 
 int main()
 {
     std::cout << std::filesystem::current_path() << '\n';
-    std::filesystem::path path = "Battleship/Ships/test.txt";
+    std::filesystem::path path = "Ships/test.txt";
 
     if (!std::filesystem::exists(path)) {
         std::cout << "File doesn't exist.\n";
@@ -151,6 +152,137 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
 		baseShips[i].setShipNum(i + 1);
 	}
     return gridSize;
+}
+
+void shipCreation() {
+    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (1-10) of the ship (width height) or 'exit' to return to Main Menu: ", 1, 10, 1, 10, true);
+    std::vector<std::vector<char>> shipGrid = std::vector<std::vector<char>>(
+        dimensions.second, std::vector<char>(dimensions.first, '.')
+    );
+    while (true) {
+        int creationInput = getIntegerInput("\n===== Custom Ship Creation =====\n[1] Edit Ship\n[2] Save Ship\n[3] Return to Main Menu\nEnter your choice: ", 1, 3);
+        if (creationInput == 3) {
+            return;
+        }
+        else if (creationInput == 2) {
+            if (!isValidShip(shipGrid)) {
+                std::cout << "Invalid ship. Cannot save it.\n";
+                continue;
+            }
+            else {
+                break;
+            }
+        }
+        else {
+            std::pair<int, int> point = getTwoIntegersInput("Enter the point (row col) to toggle on/off or 'cancel' to return to option selection: ", 0, dimensions.second - 1, 0, dimensions.first - 1, true, "cancel");
+            if (point.first == EXIT_CODE) {
+                continue;
+            }
+            if (shipGrid[point.first][point.second] == '.') {
+                shipGrid[point.first][point.second] = 'o';
+            }
+            else {
+                shipGrid[point.first][point.second] = '.';
+            }
+        }
+    }
+
+}
+
+void printShipCreation(const std::vector<std::vector<char>>& ship) {
+    int height = ship.size();
+    int width = ship[0].size();
+    std::cout << YELLOW << "  ";
+    for (int i = 0; i < width; i++) {
+        std::cout << i << " ";
+    }
+    std::cout << "\n" << RESET;
+    for (int i = 0; i < height; i++) {
+        std::cout << YELLOW << i << " " << RESET;
+        for (int j = 0; j < width; j++) {
+            if (ship[i][j] == 'o') {
+                std::cout << BLUE;
+            }
+            std::cout << ship[i][j] << " " << RESET;
+        }
+        std::cout << "\n";
+    }
+}
+
+bool isValidShip(std::vector<std::vector<char>> ship) {
+    int height = ship.size();
+    int width = ship[0].size();
+    int groups = 0;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            if (ship[i][j] == 'o') {
+                if (groups > 0) {
+                    return false;
+                }
+                traverse(ship, i, j);
+                groups++;
+            }
+        }
+    }
+    return groups == 1;
+}
+
+void traverse(std::vector<std::vector<char>>& ship, int r, int c) {
+    int height = ship.size();
+    int width = ship[0].size();
+    std::queue<std::pair<int, int>> traverseQueue = std::queue<std::pair<int, int>>();
+    traverseQueue.push({ r, c });
+    ship[r][c] = '.';
+    while (!traverseQueue.empty()) {
+        std::pair<int, int> point = traverseQueue.front();
+        traverseQueue.pop();
+        if (point.first > 0 && ship[point.first - 1][point.second] == 'o') {
+            traverseQueue.push({ point.first - 1, point.second });
+            ship[point.first - 1][point.second] = '.';
+        }
+        if (point.first < height - 1 && ship[point.first + 1][point.second] == 'o') {
+            traverseQueue.push({ point.first + 1, point.second });
+            ship[point.first + 1][point.second] = '.';
+        }
+        if (point.second > 0 && ship[point.first][point.second - 1] == 'o') {
+            traverseQueue.push({ point.first, point.second - 1 });
+            ship[point.first][point.second - 1] = '.';
+        }
+        if (point.second < width - 1 && ship[point.first][point.second + 1] == 'o') {
+            traverseQueue.push({ point.first, point.second + 1 });
+            ship[point.first][point.second + 1] = '.';
+        }
+    }
+}
+
+CustomShip buildShip(const std::vector<std::vector<char>> shipGrid) {
+    int height = shipGrid.size();
+    int width = shipGrid[0].size();
+    int smallestR = 10;
+    int smallestC = 10;
+    int largestR = 0;
+    int largestC = 0;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            if (shipGrid[i][j] == 'o') {
+                smallestR = std::min(smallestR, i);
+                smallestC = std::min(smallestC, j);
+                largestR = std::max(largestR, i);
+                largestC = std::max(largestC, j);
+            }
+        }
+    }
+    std::vector<std::pair<int, int>> exclusions;
+    for (int i = smallestR; i <= largestR; i++) {
+        for (int j = smallestC; j <= largestC; j++) {
+            if (shipGrid[i][j] == '.') {
+                exclusions.push_back({ i - smallestR, j - smallestC });
+            }
+        }
+    }
+
+    CustomShip newShip = CustomShip(largestC - smallestC + 1, largestR - smallestR + 1, 0, 0, exclusions);
+    return newShip;
 }
 
 int shipPlacement(int players, int gridSize, bool classic, const std::vector<Ship>& baseShips, PlayerManager& player1, PlayerManager& player2) {
