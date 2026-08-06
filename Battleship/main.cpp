@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <deque>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <string>
@@ -41,6 +43,20 @@ std::vector<Ship> classicShips = { Ship(2, 1, 0, 0), Ship(3, 1, 0, 0), Ship(3, 1
 
 int main()
 {
+    std::cout << std::filesystem::current_path() << '\n';
+    std::filesystem::path path = "Battleship/Ships/test.txt";
+
+    if (!std::filesystem::exists(path)) {
+        std::cout << "File doesn't exist.\n";
+    }
+    else {
+        std::ifstream file(path);
+        std::string line;
+        std::getline(file, line);
+        std::cout << line << std::endl;
+        // Read the file...
+    }
+    std::cin.get();
     clearOutput();
     std::cout << RESET << "Welcome to Battleship!\n";
     int numPlayers = 1;
@@ -84,6 +100,7 @@ int main()
             // create custom ships
             break;
         case 6:
+            clearOutput();
             return 0;
         }
     }   
@@ -336,7 +353,7 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             }
             switch (bot.attack(attackPos.first, attackPos.second)) {
             case -1:
-				std::cout << YELLOW << "Invalid attack. Please try again.\n";
+				std::cout << YELLOW << "Invalid attack. Please try again.\n" << RESET;
                 continue;
             case 0:
                 std::cout << YELLOW << "Miss!\n" << RESET;
@@ -600,7 +617,7 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         }
         switch (currPlayerManager.attack(attackPos.first, attackPos.second)) {
         case -1:
-            std::cout << YELLOW << "Invalid attack. Please try again.\n";
+            std::cout << YELLOW << "Invalid attack. Please try again.\n" << RESET;
             continue;
         case 0:
             std::cout << YELLOW << "Miss!\n" << RESET;
