@@ -5,6 +5,10 @@ CustomShip::CustomShip(int w, int h, int _x, int _y, const std::vector<std::pair
 	generateShipGrid();
 }
 
+std::vector<std::pair<int, int>> CustomShip::getExclusions() const {
+	return exclusions;
+}
+
 bool CustomShip::isValidPosition(const std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {

@@ -16,6 +16,8 @@ protected:
 
 public:
 	CustomShip(int w, int h, int _r, int _c, const std::vector<std::pair<int, int>>& ex);
+	
+	std::vector<std::pair<int, int>> getExclusions() const;
 
 	void rotateClockwise() override;
 	void rotateCounterClockwise() override;

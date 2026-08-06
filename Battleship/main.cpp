@@ -21,10 +21,22 @@
 #define SHIP_ROW_LENGTH (5)
 #define EXIT_CODE (-1)
 
+#define DEFAULT_GRID_SIZE (10)
+#define MIN_GRID_SIZE (5)
+#define MAX_GRID_SIZE (20)
+#define MIN_SHIP_SIZE (1)
+#define MAX_SHIP_SIZE (10)
+
 int randomInt(int, int);
 void trimAndToLower(std::string& s);
 void clearOutput(void);
 int setup(bool, std::vector<Ship>&);
+void shipCreation(void);
+void printShipCreation(const std::vector<std::vector<char>>&);
+bool isValidShip(std::vector<std::vector<char>>);
+void traverse(std::vector<std::vector<char>>&, int, int);
+CustomShip buildShip(const std::vector<std::vector<char>>);
+bool importShip(std::string path, CustomShip&);
 int shipPlacement(int, int, bool, const std::vector<Ship>&, PlayerManager&, PlayerManager&);
 int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
 int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
@@ -34,7 +46,6 @@ void printPlacementBoard(const std::vector<std::vector<char>>&);
 void printShips(const std::vector<Ship>&);
 void printShips(const std::vector<Ship>&, const std::vector<bool>&);
 int getIntegerInput(std::string, int, int, bool allowExit = false, std::string exitString = "exit");
-int getIntegerInput(int, int);
 std::pair<int, int> getTwoIntegersInput(std::string, int, int, int, int, bool allowExit = false, std::string exitString = "exit");
 
 
@@ -44,24 +55,10 @@ std::string const shipPath = "Ships/";
 
 int main()
 {
-    std::cout << std::filesystem::current_path() << '\n';
-    std::filesystem::path path = "Ships/test.txt";
-
-    if (!std::filesystem::exists(path)) {
-        std::cout << "File doesn't exist.\n";
-    }
-    else {
-        std::ifstream file(path);
-        std::string line;
-        std::getline(file, line);
-        std::cout << line << std::endl;
-        // Read the file...
-    }
-    std::cin.get();
     clearOutput();
     std::cout << RESET << "Welcome to Battleship!\n";
     int numPlayers = 1;
-    int gridSize = 10;
+    int gridSize = DEFAULT_GRID_SIZE;
     bool classic = true;
     std::vector<Ship> baseShips = std::vector<Ship>();
     PlayerManager player1, player2;
@@ -99,6 +96,9 @@ int main()
             break;
         case 5:
             // create custom ships
+            clearOutput();
+            std::cout << "===== Custom Ship Creation ===== \n";
+            shipCreation();
             break;
         case 6:
             clearOutput();
@@ -137,16 +137,75 @@ void clearOutput(void) {
 }
 
 int setup(bool classic, std::vector<Ship>& baseShips) {
-    int gridSize = 10;
+    int gridSize = DEFAULT_GRID_SIZE;
     if (classic) {
         baseShips = classicShips;
     }
     else {
-		gridSize = getIntegerInput("Enter grid size (5-20) or 'exit' to return to Main Menu: ", 5, 20, true);
+		gridSize = getIntegerInput("Enter grid size (" + std::to_string(MIN_GRID_SIZE) + "-" + std::to_string(MAX_GRID_SIZE) + ") or 'exit' to return to Main Menu : ", MIN_GRID_SIZE, MAX_GRID_SIZE, true);
         if (gridSize == EXIT_CODE) {
             return EXIT_CODE;
         }
         // input ships
+        baseShips = std::vector<Ship>();
+        while (true) {
+            int setupInput = getIntegerInput("\n===== Setup Menu =====\n[1] View/Remove Ships\n[2] Add Ship\n[3] Confirm Ship List\n[4] Return to Main Menu\nEnter your choice:", 1, 4);
+            if (setupInput == 4) {
+                return EXIT_CODE;
+            }
+            else if (setupInput == 3) {
+                if (baseShips.empty()) {
+                    std::cout << RED << "Ship list is empty.\n";
+                }
+                else {
+                    break;
+                }
+            }
+            else if (setupInput == 2) {
+                while (true) {
+                    std::cout << "Enter the name of the ship to add or 'cancel' to return to option selection: ";
+                    std::string name;
+                    std::getline(std::cin, name);
+                    trimAndToLower(name);
+                    if (name == "cancel") {
+                        break;
+                    }
+                    else if (!std::filesystem::exists(shipPath + "/" + name + ".txt")) {
+                        std::cout << RED << "Could not find ship '" << name << "'.\n" << RESET;
+                    }
+                    else {
+                        CustomShip ship = CustomShip(0, 0, 0, 0, {});
+                        if (!importShip(shipPath + "/" + name + ".txt", ship)) {
+                            std::cout << RED << "There was an error adding ship '" << name << "'.\n" << RESET;
+                        }
+                        else {
+                            baseShips.push_back(ship);
+                            std::cout << GREEN << "Added ship '" << name << "' successfully!\n" << RESET;
+                        }
+                    }
+                }
+            }
+            else if (setupInput == 1) {
+                if (baseShips.empty()) {
+                    std::cout << "No ships added.\n";
+                }
+                else {
+                    std::cout << "Ships:\n";
+                    printShips(baseShips);
+                    std::cout << "\n";
+                    int removeInput = getIntegerInput("Enter the ship number to remove (1-" + std::to_string(baseShips.size()) + ") or 'cancel' to return to option selection: ", 1, baseShips.size(), true, "cancel");
+                    if (removeInput == EXIT_CODE) {
+                        continue;
+                    }
+                    baseShips.erase(baseShips.begin() + removeInput - 1);
+                    std::cout << GREEN << "Ship " << removeInput << " removed successfully!\n" << RESET;
+                }
+            }
+        }
+        std::cout << GREEN << "Ship list confirmed!\n" << RESET;
+        printShips(baseShips);
+        std::cout << "\nPress Enter to return to continue...";
+        std::cin.get();
     }
 	for (int i = 0; i < baseShips.size(); i++) {
 		baseShips[i].setShipNum(i + 1);
@@ -155,25 +214,37 @@ int setup(bool classic, std::vector<Ship>& baseShips) {
 }
 
 void shipCreation() {
-    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (1-10) of the ship (width height) or 'exit' to return to Main Menu: ", 1, 10, 1, 10, true);
+    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (" + std::to_string(MIN_SHIP_SIZE) + "-" + std::to_string(MAX_SHIP_SIZE) + ") of the ship(width height) or 'exit' to return to Main Menu : ",
+        MIN_SHIP_SIZE, MAX_SHIP_SIZE, MIN_SHIP_SIZE, MAX_SHIP_SIZE, true);
     std::vector<std::vector<char>> shipGrid = std::vector<std::vector<char>>(
         dimensions.second, std::vector<char>(dimensions.first, '.')
     );
-    while (true) {
-        int creationInput = getIntegerInput("\n===== Custom Ship Creation =====\n[1] Edit Ship\n[2] Save Ship\n[3] Return to Main Menu\nEnter your choice: ", 1, 3);
+    std::string name;
+    bool save = false;
+    while (!save) {
+        int creationInput = getIntegerInput("\n===== Custom Ship Creation Menu =====\n[1] Edit/View Ship\n[2] Save Ship\n[3] Return to Main Menu\nEnter your choice: ", 1, 3);
         if (creationInput == 3) {
+            clearOutput();
             return;
         }
         else if (creationInput == 2) {
             if (!isValidShip(shipGrid)) {
-                std::cout << "Invalid ship. Cannot save it.\n";
+                std::cout << RED << "Invalid ship. Cannot save it.\n" << RESET;
                 continue;
             }
             else {
-                break;
+                std::cout << "Enter the name of the ship or 'cancel' to return to option selection: ";
+                std::getline(std::cin, name);
+                trimAndToLower(name);
+                if (name != "cancel") {
+                    save = true;
+                }
             }
         }
         else {
+            std::cout << "\nShip:\n";
+            printShipCreation(shipGrid);
+            std::cout << "\n";
             std::pair<int, int> point = getTwoIntegersInput("Enter the point (row col) to toggle on/off or 'cancel' to return to option selection: ", 0, dimensions.second - 1, 0, dimensions.first - 1, true, "cancel");
             if (point.first == EXIT_CODE) {
                 continue;
@@ -184,9 +255,29 @@ void shipCreation() {
             else {
                 shipGrid[point.first][point.second] = '.';
             }
+            std::cout << "\nShip:\n";
+            printShipCreation(shipGrid);
         }
     }
-
+    CustomShip newShip = buildShip(shipGrid);
+    std::ofstream file(shipPath + "/" + name + ".txt", std::ios::trunc);
+    if (!file.is_open()) {
+        std::cout << RED << "There was an error creating the save file.\n" << RESET;
+        std::cout << "\nPress Enter to return to Main Menu...";
+        std::cin.get();
+        clearOutput();
+        return;
+    }
+    file << newShip.getWidth() << " " << newShip.getHeight() << "\n";
+    for (std::pair<int, int> ex : newShip.getExclusions()) {
+        file << ex.first << " " << ex.second << "\n";
+    }
+    file.flush();
+    file.close();
+    std::cout << GREEN << "Ship '" << name << "' saved successfully!\n" << RESET;
+    std::cout << "\nPress Enter to return to Main Menu...";
+    std::cin.get();
+    clearOutput();
 }
 
 void printShipCreation(const std::vector<std::vector<char>>& ship) {
@@ -258,8 +349,8 @@ void traverse(std::vector<std::vector<char>>& ship, int r, int c) {
 CustomShip buildShip(const std::vector<std::vector<char>> shipGrid) {
     int height = shipGrid.size();
     int width = shipGrid[0].size();
-    int smallestR = 10;
-    int smallestC = 10;
+    int smallestR = MAX_SHIP_SIZE;
+    int smallestC = MAX_SHIP_SIZE;
     int largestR = 0;
     int largestC = 0;
     for (int i = 0; i < height; i++) {
@@ -283,6 +374,52 @@ CustomShip buildShip(const std::vector<std::vector<char>> shipGrid) {
 
     CustomShip newShip = CustomShip(largestC - smallestC + 1, largestR - smallestR + 1, 0, 0, exclusions);
     return newShip;
+}
+
+bool importShip(std::string path, CustomShip& ship) {
+    std::fstream file(path);
+    std::string line;
+    std::getline(file, line);
+    int width;
+    int height;
+    try {
+        std::size_t pos;
+        width = std::stoi(line, &pos);
+        std::string second = line.substr(pos);
+        height  = std::stoi(second, &pos);
+        if (pos != second.size()) {
+            return false;
+        }
+    }
+    catch (...) {
+        return false;
+    }
+    if (width < MIN_SHIP_SIZE || width > MAX_SHIP_SIZE || height < MIN_SHIP_SIZE || height > MAX_SHIP_SIZE) {
+        return false;
+    }
+    std::vector<std::pair<int, int>> exclusions = std::vector<std::pair<int, int>>();
+    while (std::getline(file, line))
+    {
+        int r, c;
+        try {
+            std::size_t pos;
+            r = std::stoi(line, &pos);
+            std::string second = line.substr(pos);
+            c = std::stoi(second, &pos);
+            if (pos != second.size()) {
+                return false;
+            }
+        }
+        catch (...) {
+            return false;
+        }
+        if (r < 0 || r >= height || c < 0 || c >= width) {
+            return false;
+        }
+        exclusions.push_back({ r, c });
+    }
+    ship = CustomShip(width, height, 0, 0, exclusions);
+    return true;
 }
 
 int shipPlacement(int players, int gridSize, bool classic, const std::vector<Ship>& baseShips, PlayerManager& player1, PlayerManager& player2) {
@@ -398,11 +535,11 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
                     if (ships[placementInput - 1].addToBoard(placementBoard)) {
                         placed[placementInput - 1] = true;
                         shipsPlaced++;
-						std::cout << "Ship " + std::to_string(placementInput) + " placed successfully!\n";
+						std::cout << GREEN << "Ship " + std::to_string(placementInput) + " placed successfully!\n" << RESET;
                         break;
                     }
                     else {
-						std::cout << "Invalid placement. Please try again.\n";
+						std::cout << RED << "Invalid placement. Please try again.\n" << RESET;
                     }
                 }
 				if (shipPos.first == EXIT_CODE) {
@@ -413,7 +550,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<Shi
                 ships[placementInput - 1].removeFromBoard(placementBoard);
                 placed[placementInput - 1] = false;
                 shipsPlaced--;
-                std::cout << "Ship " + std::to_string(placementInput) + " removed successfully!\n";
+                std::cout << GREEN << "Ship " + std::to_string(placementInput) + " removed successfully!\n" << RESET;
             }
         }
         player.setPlacementBoard(placementBoard);
@@ -485,7 +622,7 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             }
             switch (bot.attack(attackPos.first, attackPos.second)) {
             case -1:
-				std::cout << YELLOW << "Invalid attack. Please try again.\n" << RESET;
+				std::cout << RED << "Invalid attack. Please try again.\n" << RESET;
                 continue;
             case 0:
                 std::cout << YELLOW << "Miss!\n" << RESET;
@@ -749,7 +886,7 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         }
         switch (currPlayerManager.attack(attackPos.first, attackPos.second)) {
         case -1:
-            std::cout << YELLOW << "Invalid attack. Please try again.\n" << RESET;
+            std::cout << RED << "Invalid attack. Please try again.\n" << RESET;
             continue;
         case 0:
             std::cout << YELLOW << "Miss!\n" << RESET;
@@ -872,7 +1009,54 @@ void printPlacementBoard(const std::vector<std::vector<char>>& board) {
 }
 
 void printShips(const std::vector<Ship>& ships) {
-	
+    int n = ships.size();
+    int i = 0;
+    std::cout << RESET;
+    while (i < n) {
+        int maxHeight = 0;
+        // print first row and get max height
+        for (int j = i; j < i + SHIP_ROW_LENGTH && j < n; j++) {
+            std::cout << "[" + std::to_string(j + 1) + "] ";
+            for (int k = 0; k < ships[j].getWidth(); k++) {
+                if (ships[j].getShipGrid()[0][k]) {
+                    std::cout << "o";
+                }
+                else {
+                    std::cout << " ";
+                }
+                std::cout << " ";
+                maxHeight = std::max(maxHeight, ships[j].getHeight());
+            }
+            std::cout << "  ";
+        }
+        std::cout << "\n";
+        for (int j = 1; j < maxHeight; j++) {
+            for (int k = i; k < i + SHIP_ROW_LENGTH && k < n; k++) {
+                std::cout << "    ";
+                if (j >= ships[k].getHeight()) {
+                    for (int l = 0; l < ships[k].getWidth(); l++) {
+                        std::cout << "  ";
+                    }
+                }
+                else {
+                    for (int l = 0; l < ships[k].getWidth(); l++) {
+                        if (ships[k].getShipGrid()[j][l]) {
+                            std::cout << "o";
+                        }
+                        else {
+                            std::cout << " ";
+                        }
+                        std::cout << " ";
+                    }
+                }
+                std::cout << "  ";
+
+            }
+            std::cout << "\n";
+        }
+        std::cout << "\n";
+        i += SHIP_ROW_LENGTH;
+    }
 }
 
 void printShips(const std::vector<Ship>& ships, const std::vector<bool>& placed) {
@@ -954,44 +1138,20 @@ int getIntegerInput(std::string prompt, int min, int max, bool allowExit, std::s
             std::size_t pos;
             input = std::stoi(line, &pos);
             if (pos != line.size()) {
-                std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n";
+                std::cout << RED << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n" << RESET;
                 continue;
             }
         }
         catch (...) {
-            std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n";
+            std::cout << RED << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n" << RESET;
             continue;
         }
 		if (input < min || input > max) {
-			std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n";
+			std::cout << RED << "Invalid input. Please enter an integer from " << min << " to " << max << (allowExit ? " or '" + exitString + "'" : "") + ".\n" << RESET;
 			continue;
 		}
         return input;
     }
-}
-
-int getIntegerInput(int min, int max) {
-    int input;
-    std::string line;
-    std::getline(std::cin, line);
-    trimAndToLower(line);
-    try {
-        std::size_t pos;
-        input = std::stoi(line, &pos);
-        if (pos != line.size()) {
-            std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << ".\n";
-            return -1;
-        }
-    }
-    catch (...) {
-        std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << ".\n";
-        return -1;
-    }
-    if (input < min || input > max) {
-        std::cout << "Invalid input. Please enter an integer from " << min << " to " << max << ".\n";
-        return -1;
-    }
-    return input;
 }
 
 std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, int min2, int max2, bool allowExit, std::string exitString) {
@@ -1011,16 +1171,16 @@ std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, 
             std::string second = line.substr(pos);
             input.second = std::stoi(second, &pos);
 			if (pos != second.size()) {
-				std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n";
+				std::cout << RED << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n" << RESET;
 				continue;
 			}
         }
         catch (...) {
-            std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n";
+            std::cout << RED << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n" << RESET;
             continue;
         }
         if (input.first < min1 || input.first > max1 || input.second < min2 || input.second > max2) {
-            std::cout << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n";
+            std::cout << RED << "Invalid input. Please enter an integer from " << min1 << " to " << max1 << " and an integer from " << min2 << " to " << max2 << ", separated by a space" + (allowExit ? ", or '" + exitString + "'" : "") + ".\n" << RESET;
             continue;
         }
         return input;
