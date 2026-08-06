@@ -24,7 +24,7 @@ void clearOutput(void);
 int setup(bool, std::vector<Ship>&);
 int shipPlacement(int, int, bool, const std::vector<Ship>&, PlayerManager&, PlayerManager&);
 int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
-void playMultiplayer(PlayerManager&, PlayerManager&, int);
+int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<Ship>&, int);
 void printShip(Ship ship);
 void printGameBoard(const std::vector<std::vector<char>>&);
 void printPlacementBoard(const std::vector<std::vector<char>>&);
@@ -77,7 +77,7 @@ int main()
                 playSingleplayer(player1, player2, baseShips, gridSize);
             }
             else {
-                playMultiplayer(player1, player2, gridSize);
+                playMultiplayer(player1, player2, baseShips, gridSize);
             }
             break;
         case 5:
@@ -584,8 +584,58 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
     return 0;
 }
 
-void playMultiplayer(PlayerManager& player1, PlayerManager& player2, int gridSize) {
+int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::vector<Ship>& baseShips, int gridSize) {
+    int turn = 1;
+    int winner = 0;
+    while (winner == 0) {
+        PlayerManager& currPlayerManager = (turn == 1 ? player2 : player1);
+        std::cout << "\n===== Player " << turn << "'s Turn =====\n";
+        std::cout << "\nBoard:\n";
+        printGameBoard(currPlayerManager.getDisplayBoard());
+        std::cout << "\nShips:\n";
+        printShips(baseShips, currPlayerManager.getSunkList());
+        std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
+        if (attackPos.first == EXIT_CODE) {
+            return EXIT_CODE;
+        }
+        switch (currPlayerManager.attack(attackPos.first, attackPos.second)) {
+        case -1:
+            std::cout << YELLOW << "Invalid attack. Please try again.\n";
+            continue;
+        case 0:
+            std::cout << YELLOW << "Miss!\n" << RESET;
+            break;
+        case 1:
+            std::cout << YELLOW << "Hit!\n" << RESET;
+            break;
+        case 2:
+            std::cout << YELLOW << "Hit! Player " << turn << " sunk a ship!\n" << RESET;
+            if (currPlayerManager.getShipsRemaining() == 0) {
+                winner = turn;
+            }
+            break;
+        }
+        std::cout << "\nBoard:\n";
+        printGameBoard(currPlayerManager.getDisplayBoard());
+        std::cout << "\nShips:\n";
+        printShips(baseShips, currPlayerManager.getSunkList());
+        if (winner == 0) {
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+        }
+        turn = 3 - turn;
+    }
 
+    if (winner == 1) {
+        std::cout << YELLOW << "\nPlayer 1 Wins!\n" << RESET;
+    }
+    else {
+        std::cout << YELLOW << "\nPlayer 2 Wins!\n" << RESET;
+    }
+    std::cout << "\nPress Enter to return to Main Menu...";
+    std::cin.get();
+    clearOutput();
+    return 0;
 }
 
 void printShip(Ship ship) {
