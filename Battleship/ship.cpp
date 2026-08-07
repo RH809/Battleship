@@ -8,6 +8,10 @@ Ship::Ship(int w, int h, int _r, int _c) : width(w), height(h), r(_r), c(_c) {
 	generateShipGrid();
 }
 
+std::unique_ptr<Ship> Ship::clone() const {
+	return std::make_unique<Ship>(*this);
+}
+
 int Ship::getWidth() const { return width; }
 int Ship::getHeight() const { return height; }
 int Ship::getR() const { return r; }
@@ -56,7 +60,6 @@ void Ship::removeFromBoard(std::vector<std::vector<char>>& board) const {
 
 bool Ship::hit(int hitR, int hitC, std::vector<std::vector<char>>& board) {
 	numPoints--;
-	//std::cout << numPoints << " " << hitR << " " << hitC << std::endl;
 	board[hitR][hitC] = 'o';
 	if (numPoints == 0) {
 		sink(board);
@@ -68,7 +71,6 @@ bool Ship::hit(int hitR, int hitC, std::vector<std::vector<char>>& board) {
 void Ship::sink(std::vector<std::vector<char>>& board) const {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
-			std::cout << (r + i) << " " << (c + j) << std::endl;
 			board[r + i][c + j] = 'x';
 		}
 	}

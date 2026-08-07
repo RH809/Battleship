@@ -11,8 +11,11 @@ void PlayerManager::setPlacementBoard(std::vector<std::vector<char>>& const boar
 	);
 }
 
-void PlayerManager::setShips(std::vector<Ship>& const shipList) {
-	ships = shipList;
+void PlayerManager::setShips(std::vector<std::unique_ptr<Ship>>& const shipList) {
+	ships = std::vector<std::unique_ptr<Ship>>();
+	for (const auto& ship : shipList) {
+		ships.push_back(ship->clone());
+	}
 	shipSunk = std::vector<bool>(ships.size(), false);
 	shipsRemaining = ships.size();
 }
@@ -31,7 +34,7 @@ int PlayerManager::attack(int r, int c) {
 	}
 	else {
 		int shipNum = placementBoard[r][c] - '0';
-		if (ships[shipNum - 1].hit(r, c, displayBoard)) {
+		if (ships[shipNum - 1]->hit(r, c, displayBoard)) {
 			shipsRemaining--;
 			shipSunk[shipNum - 1] = true;
 			return 2;
