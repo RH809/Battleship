@@ -1,6 +1,7 @@
 #ifndef PLAYER_MANAGER_H
 #define PLAYER_MANAGER_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,7 +14,7 @@ private:
 	std::vector<std::vector<char>> placementBoard; // board for ship placement
 	std::vector<std::vector<char>> displayBoard; // board for display while playing
 	std::vector<bool> shipSunk;
-	std::vector<Ship> ships;
+	std::vector<std::unique_ptr<Ship>> ships;
 
 public:
 	int getShipsRemaining() const;
@@ -22,7 +23,7 @@ public:
 	const std::vector<std::vector<char>>& getDisplayBoard() const;
 
 	void setPlacementBoard(std::vector<std::vector<char>>& const board);
-	void setShips(std::vector<Ship>& const shipList);
+	void setShips(std::vector<std::unique_ptr<Ship>>& const shipList);
 
 	int attack(int r, int c);
 };

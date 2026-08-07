@@ -2,6 +2,7 @@
 #define SHIP_H
 
 #include <vector>
+#include <memory>
 
 class Ship {
 protected:
@@ -18,6 +19,7 @@ protected:
 public:
 	Ship(int w, int h, int _r, int _c);
 	virtual ~Ship() = default;
+	virtual std::unique_ptr<Ship> clone() const;
 	int getWidth() const;
 	int getHeight() const;
 	int getR() const;

@@ -7,6 +7,10 @@ CustomShip::CustomShip(int w, int h, int _x, int _y, const std::vector<std::pair
 	generateShipGrid();
 }
 
+std::unique_ptr<Ship> CustomShip::clone() const {
+	return std::make_unique<CustomShip>(*this);
+}
+
 std::vector<std::pair<int, int>> CustomShip::getExclusions() const {
 	return exclusions;
 }

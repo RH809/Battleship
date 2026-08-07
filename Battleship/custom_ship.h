@@ -3,6 +3,7 @@
 #define CUSTOM_SHIP_H
 
 #include <vector>
+#include <memory>
 
 #include "ship.h"
 
@@ -16,6 +17,7 @@ protected:
 
 public:
 	CustomShip(int w, int h, int _r, int _c, const std::vector<std::pair<int, int>>& ex);
+	std::unique_ptr<Ship> clone() const override;
 	
 	std::vector<std::pair<int, int>> getExclusions() const;
 
