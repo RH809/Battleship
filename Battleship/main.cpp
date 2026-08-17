@@ -43,7 +43,7 @@ int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<std::uniq
 int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
 void printShip(const std::unique_ptr<Ship>& ship);
 void printGameBoard(const std::vector<std::vector<char>>&);
-void printPlacementBoard(const std::vector<std::vector<char>>&);
+void printPlacementBoard(const std::vector<std::vector<char>>&, int);
 void printShips(const std::vector<std::unique_ptr<Ship>>&);
 void printShips(const std::vector<std::unique_ptr<Ship>>&, const std::vector<bool>&);
 int getIntegerInput(std::string, int, int, bool allowExit = false, std::string exitString = "exit");
@@ -454,7 +454,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         while (true) {
             std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
             std::cout << "\nBoard:\n";
-            printPlacementBoard(placementBoard);
+            printPlacementBoard(placementBoard, totalShips);
             std::cout << "\nShips:\n";
             printShips(baseShips, placed);
             int placementInput = 0;
@@ -533,7 +533,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
                 // Place ship
                 while (true) {
                     std::cout << "\nBoard:\n";
-                    printPlacementBoard(placementBoard);
+                    printPlacementBoard(placementBoard, totalShips);
                     std::cout << "\n";
 
                     std::cout << "\nShip " + std::to_string(placementInput) << "\n";
@@ -576,12 +576,14 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         player.setShips(ships);
         std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
         std::cout << "Board:\n";
-        printPlacementBoard(placementBoard);
+        printPlacementBoard(placementBoard, totalShips);
 		std::cout << "\nPlayer " + std::to_string(i) + " setup complete!\n";
 		std::cout << "\nPress Enter to continue...";
         std::cin.get();
 		clearOutput(); // clear output so that the next player doesn't see the previous player's board
     }
+    std::cout << "Bot setup start";
+    std::cin.get();
 
     if (players == 1) {
         // Bot setup
@@ -598,6 +600,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         for (std::unique_ptr<Ship>& ship : ships) {
             do {
                 int transforms = randomInt(0, 2);
+                std::cout << transforms << std::endl;
 				for (int i = 0; i < transforms; i++) {
                     switch (randomInt(0, 3)) {
                     case 0:
@@ -620,6 +623,8 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
 		player2.setPlacementBoard(placementBoard);
 		player2.setShips(ships);
     }
+    std::cout << "Bot setup complete!";
+    std::cin.get();
     return 0;
 }
 
@@ -636,6 +641,7 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             printShips(baseShips, bot.getSunkList());
 			std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
             if (attackPos.first == EXIT_CODE) {
+                clearOutput();
                 return EXIT_CODE;
             }
             switch (bot.attack(attackPos.first, attackPos.second)) {
@@ -900,6 +906,7 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         printShips(baseShips, currPlayerManager.getSunkList());
         std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
         if (attackPos.first == EXIT_CODE) {
+            clearOutput();
             return EXIT_CODE;
         }
         switch (currPlayerManager.attack(attackPos.first, attackPos.second)) {
@@ -962,6 +969,9 @@ void printShip(const std::unique_ptr<Ship>& ship) {
 void printGameBoard(const std::vector<std::vector<char>>& board) {
     int n = board.size();
     std::cout << "  ";
+    if (n > 10) {
+        std::cout << " ";
+    }
     std::cout << YELLOW;
     for (int i = 0; i < n; i++) {
         std::cout << i << " ";
@@ -994,13 +1004,17 @@ void printGameBoard(const std::vector<std::vector<char>>& board) {
     std::cout << RESET;
 }
 
-void printPlacementBoard(const std::vector<std::vector<char>>& board) {
+void printPlacementBoard(const std::vector<std::vector<char>>& board, int numShips) {
     int n = board.size();
 	std::cout << "  ";
+    bool extraSpace = n > 10 || numShips >= 10;
+    if (extraSpace) {
+        std::cout << " ";
+    }
     std::cout << YELLOW;
     for (int i = 0; i < n; i++) {
 		std::cout << i << " ";
-		if (n > 10 && i < 10) {
+		if (extraSpace && i < 10) {
 			std::cout << " ";
 		}
 	}
@@ -1008,15 +1022,17 @@ void printPlacementBoard(const std::vector<std::vector<char>>& board) {
 	std::cout << "\n";
 	for (int i = 0; i < n; i++) {
 		std::cout << YELLOW << i << " " << RESET;
-        if (n > 10 && i < 10) {
+        if (extraSpace && i < 10) {
             std::cout << " ";
         }
 		for (int j = 0; j < n; j++) {
             if (board[i][j] != '.') {
-                std::cout << BLUE;
+                std::cout << BLUE << board[i][j] - '0' << " ";
             }
-			std::cout << board[i][j] << " ";
-            if (n > 10) {
+            else {
+                std::cout << board[i][j] << " ";
+            }
+            if (extraSpace && (board[i][j] == '.' || (board[i][j] != '.' && board[i][j] - '0' < 10))) {
                 std::cout << " ";
             }
             std::cout << RESET;
