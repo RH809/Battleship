@@ -225,7 +225,7 @@ int setup(bool classic, std::vector<std::unique_ptr<Ship>>& baseShips) {
 }
 
 void shipCreation() {
-    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (" + std::to_string(MIN_SHIP_SIZE) + "-" + std::to_string(MAX_SHIP_SIZE) + ") of the ship(width height) or 'exit' to return to Main Menu: ",
+    std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (" + std::to_string(MIN_SHIP_SIZE) + "-" + std::to_string(MAX_SHIP_SIZE) + ") of the ship (width height) or 'exit' to return to Main Menu: ",
         MIN_SHIP_SIZE, MAX_SHIP_SIZE, MIN_SHIP_SIZE, MAX_SHIP_SIZE, true);
     std::vector<std::vector<char>> shipGrid = std::vector<std::vector<char>>(
         dimensions.second, std::vector<char>(dimensions.first, '.')
