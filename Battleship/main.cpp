@@ -39,11 +39,12 @@ void traverse(std::vector<std::vector<char>>&, int, int);
 CustomShip buildShip(const std::vector<std::vector<char>>);
 bool importShip(std::string path, CustomShip&, int);
 int shipPlacement(int, int, bool, const std::vector<std::unique_ptr<Ship>>&, PlayerManager&, PlayerManager&);
+bool placeShips(std::vector<std::vector<char>>&, int, std::vector<std::unique_ptr<Ship>>&, int);
 int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
 int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
 void printShip(const std::unique_ptr<Ship>& ship);
 void printGameBoard(const std::vector<std::vector<char>>&);
-void printPlacementBoard(const std::vector<std::vector<char>>&);
+void printPlacementBoard(const std::vector<std::vector<char>>&, int);
 void printShips(const std::vector<std::unique_ptr<Ship>>&);
 void printShips(const std::vector<std::unique_ptr<Ship>>&, const std::vector<bool>&);
 int getIntegerInput(std::string, int, int, bool allowExit = false, std::string exitString = "exit");
@@ -227,6 +228,10 @@ int setup(bool classic, std::vector<std::unique_ptr<Ship>>& baseShips) {
 void shipCreation() {
     std::pair<int, int> dimensions = getTwoIntegersInput("Enter the width and height (" + std::to_string(MIN_SHIP_SIZE) + "-" + std::to_string(MAX_SHIP_SIZE) + ") of the ship (width height) or 'exit' to return to Main Menu: ",
         MIN_SHIP_SIZE, MAX_SHIP_SIZE, MIN_SHIP_SIZE, MAX_SHIP_SIZE, true);
+    if (dimensions.first == EXIT_CODE) {
+        clearOutput();
+        return;
+    }
     std::vector<std::vector<char>> shipGrid = std::vector<std::vector<char>>(
         dimensions.second, std::vector<char>(dimensions.first, '.')
     );
@@ -450,7 +455,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         while (true) {
             std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
             std::cout << "\nBoard:\n";
-            printPlacementBoard(placementBoard);
+            printPlacementBoard(placementBoard, totalShips);
             std::cout << "\nShips:\n";
             printShips(baseShips, placed);
             int placementInput = 0;
@@ -529,7 +534,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
                 // Place ship
                 while (true) {
                     std::cout << "\nBoard:\n";
-                    printPlacementBoard(placementBoard);
+                    printPlacementBoard(placementBoard, totalShips);
                     std::cout << "\n";
 
                     std::cout << "\nShip " + std::to_string(placementInput) << "\n";
@@ -572,13 +577,13 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         player.setShips(ships);
         std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
         std::cout << "Board:\n";
-        printPlacementBoard(placementBoard);
+        printPlacementBoard(placementBoard, totalShips);
 		std::cout << "\nPlayer " + std::to_string(i) + " setup complete!\n";
 		std::cout << "\nPress Enter to continue...";
         std::cin.get();
 		clearOutput(); // clear output so that the next player doesn't see the previous player's board
     }
-
+    std::cout << "Bot setup in progress...\n";
     if (players == 1) {
         // Bot setup
         // Bot is player2
@@ -590,33 +595,84 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         std::vector<std::vector<char>> placementBoard = std::vector<std::vector<char>>(
             gridSize, std::vector<char>(gridSize, '.')
         );
-        // Randomize orientation and position
-        for (std::unique_ptr<Ship>& ship : ships) {
-            do {
-                int transforms = randomInt(0, 2);
-				for (int i = 0; i < transforms; i++) {
-                    switch (randomInt(0, 3)) {
-                    case 0:
-                        ship->rotateClockwise();
-                        break;
-                    case 1:
-                        ship->rotateCounterClockwise();
-                        break;
-                    case 2:
-                        ship->flipHorizontal();
-                        break;
-                    case 3:
-                        ship->flipVertical();
-                        break;
-                    }
-				}
-                ship->setPosition(randomInt(0, gridSize - ship->getHeight() - 1), randomInt(0, gridSize - ship->getWidth() - 1));
-            } while (!ship->addToBoard(placementBoard));
+        if (placeShips(placementBoard, gridSize, ships, 0)) {
+            player2.setPlacementBoard(placementBoard);
+            player2.setShips(ships);
         }
-		player2.setPlacementBoard(placementBoard);
-		player2.setShips(ships);
+        else {
+            std::cout << RED << "\nThere was an error during bot setup. Press Enter to return to Main Menu..." << RESET;
+            std::cin.get();
+            clearOutput();
+            return EXIT_CODE;
+        }
+        
     }
+    clearOutput();
     return 0;
+}
+
+bool placeShips(std::vector<std::vector<char>>& placementBoard, int gridSize, std::vector<std::unique_ptr<Ship>>& ships, int index) {
+    if (index == ships.size()) return true;
+    std::unique_ptr<Ship>& ship = ships[index];
+    if (randomInt(0, 1) == 1) { // choose whether to start flipped or not
+        ship->flipHorizontal();
+    }
+    int rotations[] = {0, 1, 2, 3};
+    std::shuffle(std::begin(rotations), std::end(rotations), gen);
+    for (int rotations : rotations) {
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateClockwise();
+        }
+        std::vector<std::pair<int, int>> positions = std::vector<std::pair<int, int>>();
+        for (int i = 0; i <= gridSize - ship->getHeight(); i++) {
+            for (int j = 0; j <= gridSize - ship->getWidth(); j++) {
+                positions.push_back({ i, j });
+            }
+        }
+        std::shuffle(positions.begin(), positions.end(), gen);
+        for (std::pair<int, int> position : positions) {
+            ship->setPosition(position.first, position.second);
+            if (ship->addToBoard(placementBoard)) {
+                if (placeShips(placementBoard, gridSize, ships, index + 1)) {
+                    return true;
+                }
+                ship->removeFromBoard(placementBoard);
+            }
+        }
+        // reset
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateCounterClockwise();
+        }
+    }
+    // do other orientation
+    ship->flipHorizontal();
+    std::shuffle(std::begin(rotations), std::end(rotations), gen);
+    for (int rotations : rotations) {
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateClockwise();
+        }
+        std::vector<std::pair<int, int>> positions = std::vector<std::pair<int, int>>();
+        for (int i = 0; i <= gridSize - ship->getHeight(); i++) {
+            for (int j = 0; j <= gridSize - ship->getWidth(); j++) {
+                positions.push_back({ i, j });
+            }
+        }
+        std::shuffle(positions.begin(), positions.end(), gen);
+        for (std::pair<int, int> position : positions) {
+            ship->setPosition(position.first, position.second);
+            if (ship->addToBoard(placementBoard)) {
+                if (placeShips(placementBoard, gridSize, ships, index + 1)) {
+                    return true;
+                }
+                ship->removeFromBoard(placementBoard);
+            }
+        }
+        // reset
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateCounterClockwise();
+        }
+    }
+    return false;
 }
 
 int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<std::unique_ptr<Ship>>& baseShips, int gridSize) {
@@ -632,6 +688,7 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             printShips(baseShips, bot.getSunkList());
 			std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
             if (attackPos.first == EXIT_CODE) {
+                clearOutput();
                 return EXIT_CODE;
             }
             switch (bot.attack(attackPos.first, attackPos.second)) {
@@ -896,6 +953,7 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         printShips(baseShips, currPlayerManager.getSunkList());
         std::pair<int, int> attackPos = getTwoIntegersInput("Enter the position to attack (row col) or 'exit' to leave the game and return to Main Menu: ", 0, gridSize - 1, 0, gridSize - 1, true);
         if (attackPos.first == EXIT_CODE) {
+            clearOutput();
             return EXIT_CODE;
         }
         switch (currPlayerManager.attack(attackPos.first, attackPos.second)) {
@@ -958,6 +1016,9 @@ void printShip(const std::unique_ptr<Ship>& ship) {
 void printGameBoard(const std::vector<std::vector<char>>& board) {
     int n = board.size();
     std::cout << "  ";
+    if (n > 10) {
+        std::cout << " ";
+    }
     std::cout << YELLOW;
     for (int i = 0; i < n; i++) {
         std::cout << i << " ";
@@ -990,13 +1051,17 @@ void printGameBoard(const std::vector<std::vector<char>>& board) {
     std::cout << RESET;
 }
 
-void printPlacementBoard(const std::vector<std::vector<char>>& board) {
+void printPlacementBoard(const std::vector<std::vector<char>>& board, int numShips) {
     int n = board.size();
 	std::cout << "  ";
+    bool extraSpace = n > 10 || numShips >= 10;
+    if (extraSpace) {
+        std::cout << " ";
+    }
     std::cout << YELLOW;
     for (int i = 0; i < n; i++) {
 		std::cout << i << " ";
-		if (n > 10 && i < 10) {
+		if (extraSpace && i < 10) {
 			std::cout << " ";
 		}
 	}
@@ -1004,15 +1069,17 @@ void printPlacementBoard(const std::vector<std::vector<char>>& board) {
 	std::cout << "\n";
 	for (int i = 0; i < n; i++) {
 		std::cout << YELLOW << i << " " << RESET;
-        if (n > 10 && i < 10) {
+        if (extraSpace && i < 10) {
             std::cout << " ";
         }
 		for (int j = 0; j < n; j++) {
             if (board[i][j] != '.') {
-                std::cout << BLUE;
+                std::cout << BLUE << board[i][j] - '0' << " ";
             }
-			std::cout << board[i][j] << " ";
-            if (n > 10) {
+            else {
+                std::cout << board[i][j] << " ";
+            }
+            if (extraSpace && (board[i][j] == '.' || (board[i][j] != '.' && board[i][j] - '0' < 10))) {
                 std::cout << " ";
             }
             std::cout << RESET;
@@ -1200,14 +1267,3 @@ std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, 
         return input;
     }
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

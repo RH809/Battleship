@@ -89,7 +89,6 @@ void CustomShip::rotateClockwise() {
 
 		exclusion.first = oldC;
 		exclusion.second = width - 1 - oldR;
-		std::cout << oldR << " " << oldC << " -> " << exclusion.first << " " << exclusion.second << std::endl;
 	}
 
 	generateShipGrid();
