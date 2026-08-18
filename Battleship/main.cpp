@@ -39,6 +39,7 @@ void traverse(std::vector<std::vector<char>>&, int, int);
 CustomShip buildShip(const std::vector<std::vector<char>>);
 bool importShip(std::string path, CustomShip&, int);
 int shipPlacement(int, int, bool, const std::vector<std::unique_ptr<Ship>>&, PlayerManager&, PlayerManager&);
+bool placeShips(std::vector<std::vector<char>>&, int, std::vector<std::unique_ptr<Ship>>&, int);
 int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
 int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
 void printShip(const std::unique_ptr<Ship>& ship);
@@ -582,9 +583,7 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         std::cin.get();
 		clearOutput(); // clear output so that the next player doesn't see the previous player's board
     }
-    std::cout << "Bot setup start";
-    std::cin.get();
-
+    std::cout << "Bot setup in progress...\n";
     if (players == 1) {
         // Bot setup
         // Bot is player2
@@ -596,36 +595,84 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         std::vector<std::vector<char>> placementBoard = std::vector<std::vector<char>>(
             gridSize, std::vector<char>(gridSize, '.')
         );
-        // Randomize orientation and position
-        for (std::unique_ptr<Ship>& ship : ships) {
-            do {
-                int transforms = randomInt(0, 2);
-                std::cout << transforms << std::endl;
-				for (int i = 0; i < transforms; i++) {
-                    switch (randomInt(0, 3)) {
-                    case 0:
-                        ship->rotateClockwise();
-                        break;
-                    case 1:
-                        ship->rotateCounterClockwise();
-                        break;
-                    case 2:
-                        ship->flipHorizontal();
-                        break;
-                    case 3:
-                        ship->flipVertical();
-                        break;
-                    }
-				}
-                ship->setPosition(randomInt(0, gridSize - ship->getHeight() - 1), randomInt(0, gridSize - ship->getWidth() - 1));
-            } while (!ship->addToBoard(placementBoard));
+        if (placeShips(placementBoard, gridSize, ships, 0)) {
+            player2.setPlacementBoard(placementBoard);
+            player2.setShips(ships);
         }
-		player2.setPlacementBoard(placementBoard);
-		player2.setShips(ships);
+        else {
+            std::cout << RED << "\nThere was an error during bot setup. Press Enter to return to Main Menu..." << RESET;
+            std::cin.get();
+            clearOutput();
+            return EXIT_CODE;
+        }
+        
     }
-    std::cout << "Bot setup complete!";
-    std::cin.get();
+    clearOutput();
     return 0;
+}
+
+bool placeShips(std::vector<std::vector<char>>& placementBoard, int gridSize, std::vector<std::unique_ptr<Ship>>& ships, int index) {
+    if (index == ships.size()) return true;
+    std::unique_ptr<Ship>& ship = ships[index];
+    if (randomInt(0, 1) == 1) { // choose whether to start flipped or not
+        ship->flipHorizontal();
+    }
+    int rotations[] = {0, 1, 2, 3};
+    std::shuffle(std::begin(rotations), std::end(rotations), gen);
+    for (int rotations : rotations) {
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateClockwise();
+        }
+        std::vector<std::pair<int, int>> positions = std::vector<std::pair<int, int>>();
+        for (int i = 0; i <= gridSize - ship->getHeight(); i++) {
+            for (int j = 0; j <= gridSize - ship->getWidth(); j++) {
+                positions.push_back({ i, j });
+            }
+        }
+        std::shuffle(positions.begin(), positions.end(), gen);
+        for (std::pair<int, int> position : positions) {
+            ship->setPosition(position.first, position.second);
+            if (ship->addToBoard(placementBoard)) {
+                if (placeShips(placementBoard, gridSize, ships, index + 1)) {
+                    return true;
+                }
+                ship->removeFromBoard(placementBoard);
+            }
+        }
+        // reset
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateCounterClockwise();
+        }
+    }
+    // do other orientation
+    ship->flipHorizontal();
+    std::shuffle(std::begin(rotations), std::end(rotations), gen);
+    for (int rotations : rotations) {
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateClockwise();
+        }
+        std::vector<std::pair<int, int>> positions = std::vector<std::pair<int, int>>();
+        for (int i = 0; i <= gridSize - ship->getHeight(); i++) {
+            for (int j = 0; j <= gridSize - ship->getWidth(); j++) {
+                positions.push_back({ i, j });
+            }
+        }
+        std::shuffle(positions.begin(), positions.end(), gen);
+        for (std::pair<int, int> position : positions) {
+            ship->setPosition(position.first, position.second);
+            if (ship->addToBoard(placementBoard)) {
+                if (placeShips(placementBoard, gridSize, ships, index + 1)) {
+                    return true;
+                }
+                ship->removeFromBoard(placementBoard);
+            }
+        }
+        // reset
+        for (int r = 0; r < rotations; r++) {
+            ship->rotateCounterClockwise();
+        }
+    }
+    return false;
 }
 
 int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<std::unique_ptr<Ship>>& baseShips, int gridSize) {
@@ -1220,14 +1267,3 @@ std::pair<int, int> getTwoIntegersInput(std::string prompt, int min1, int max1, 
         return input;
     }
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
