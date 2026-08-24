@@ -21,6 +21,7 @@ public:
 	bool alreadySunk(int r, int c);
 	const std::vector<bool>& getSunkList() const;
 	const std::vector<std::vector<char>>& getDisplayBoard() const;
+	const std::vector<std::vector<char>>& getPlacementBoard() const;
 
 	void setPlacementBoard(std::vector<std::vector<char>>& const board);
 	void setShips(std::vector<std::unique_ptr<Ship>>& const shipList);

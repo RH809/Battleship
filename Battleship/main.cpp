@@ -42,6 +42,8 @@ int shipPlacement(int, int, bool, const std::vector<std::unique_ptr<Ship>>&, Pla
 bool placeShips(std::vector<std::vector<char>>&, int, std::vector<std::unique_ptr<Ship>>&, int);
 int playSingleplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
 int playMultiplayer(PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&, int);
+void printEndBoards(int, bool, PlayerManager&, PlayerManager&, const std::vector<std::unique_ptr<Ship>>&);
+void printEndBoard(const std::vector<std::vector<char>>&, const std::vector<std::vector<char>>&, int);
 void printShip(const std::unique_ptr<Ship>& ship);
 void printGameBoard(const std::vector<std::vector<char>>&);
 void printPlacementBoard(const std::vector<std::vector<char>>&, int);
@@ -935,9 +937,10 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
     else {
         std::cout << YELLOW << "The Bot Wins!\n" << RESET;
     }
-    std::cout << "\nPress Enter to return to Main Menu...";
+    std::cout << "\nPress Enter to view boards...";
     std::cin.get();
     clearOutput();
+    printEndBoards(winner, true, player, bot, baseShips);
     return 0;
 }
 
@@ -990,10 +993,119 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
     else {
         std::cout << YELLOW << "\nPlayer 2 Wins!\n" << RESET;
     }
+    std::cout << "\nPress Enter to view boards...";
+    std::cin.get();
+    clearOutput();
+    printEndBoards(winner, false, player1, player2, baseShips);
+    return 0;
+}
+
+void printEndBoards(int winner, bool singleplayer, PlayerManager& player1, PlayerManager& player2, const std::vector<std::unique_ptr<Ship>>& baseShips) {
+    std::cout << "===== Boards =====\n";
+    if (singleplayer) {
+        std::cout << "\nPlayer Board:\n";
+    }
+    else {
+        std::cout << "\nPlayer 1 Board:\n";
+    }
+    printEndBoard(player1.getPlacementBoard(), player1.getDisplayBoard(), player1.getSunkList().size());
+    if (singleplayer) {
+        std::cout << "\nPlayer Ships:\n";
+    }
+    else {
+        std::cout << "\nPlayer 1 Ships:\n";
+    }
+    printShips(baseShips, player1.getSunkList());
+    std::cout << "\n";
+    if (singleplayer) {
+        std::cout << "\nBot Board:\n";
+    }
+    else {
+        std::cout << "\nPlayer 2 Board:\n";
+    }
+    printEndBoard(player2.getPlacementBoard(), player2.getDisplayBoard(), player2.getSunkList().size());
+    if (singleplayer) {
+        std::cout << "\nBot Ships:\n";
+    }
+    else {
+        std::cout << "\nPlayer 2 Ships:\n";
+    }
+    printShips(baseShips, player2.getSunkList());
+    std::cout << YELLOW << "Winner: ";
+    if (winner == 1) {
+        if (singleplayer) {
+            std::cout << "Player\n" << RESET;
+        }
+        else {
+            std::cout << "Player 1\n" << RESET;
+        }
+    }
+    else {
+        if (singleplayer) {
+            std::cout << "Bot\n" << RESET;
+        }
+        else {
+            std::cout << "Player 2\n" << RESET;
+        }
+    }
     std::cout << "\nPress Enter to return to Main Menu...";
     std::cin.get();
     clearOutput();
-    return 0;
+}
+
+void printEndBoard(const std::vector<std::vector<char>>& placementBoard, const std::vector<std::vector<char>>& displayBoard, int numShips) {
+    int n = placementBoard.size();
+    std::cout << "  ";
+    bool extraSpace = n > 10 || numShips >= 10;
+    if (extraSpace) {
+        std::cout << " ";
+    }
+    std::cout << YELLOW;
+    for (int i = 0; i < n; i++) {
+        std::cout << i << " ";
+        if (extraSpace && i < 10) {
+            std::cout << " ";
+        }
+    }
+    std::cout << RESET;
+    std::cout << "\n";
+    for (int i = 0; i < n; i++) {
+        std::cout << YELLOW << i << " " << RESET;
+        if (extraSpace && i < 10) {
+            std::cout << " ";
+        }
+        for (int j = 0; j < n; j++) {
+            if (displayBoard[i][j] == '-') {
+                if (placementBoard[i][j] == '.') {
+                    std::cout << RESET << placementBoard[i][j] << " ";
+                    if (extraSpace) {
+                        std::cout << " ";
+                    }
+                }
+                else {
+                    std::cout << GREEN << placementBoard[i][j] - '0' << " ";
+                    if (extraSpace && placementBoard[i][j] - '0' < 10) {
+                        std::cout << " ";
+                    }
+                }
+            }
+            else {
+                if (displayBoard[i][j] == '.') {
+                    std::cout << BLUE;
+                }
+                else {
+                    std::cout << RED;
+                }
+                std::cout << displayBoard[i][j] << " ";
+                if (extraSpace) {
+                    std::cout << " ";
+                }
+            }
+            std::cout << RESET;
+        }
+        std::cout << "\n";
+    }
+    std::cout << RESET;
 }
 
 void printShip(const std::unique_ptr<Ship>& ship) {
