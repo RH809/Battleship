@@ -27,6 +27,8 @@ public:
 	void setShips(std::vector<std::unique_ptr<Ship>>& const shipList);
 
 	int attack(int r, int c);
+
+	bool hasOnePointRemaining() const;
 };
 
 #endif

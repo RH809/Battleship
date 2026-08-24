@@ -23,7 +23,7 @@
 #define EXIT_CODE (-1)
 
 #define DEFAULT_GRID_SIZE (10)
-#define MIN_GRID_SIZE (5)
+#define MIN_GRID_SIZE (3)
 #define MAX_GRID_SIZE (20)
 #define MIN_SHIP_SIZE (1)
 #define MAX_SHIP_SIZE (10)
@@ -577,10 +577,10 @@ int shipPlacement(int players, int gridSize, bool classic, const std::vector<std
         }
         player.setPlacementBoard(placementBoard);
         player.setShips(ships);
-        std::cout << "\n===== Player " + std::to_string(i) + " Setup =====\n";
+        std::cout << "\n===== Player " + (players > 1 ? std::to_string(i) + " " : "") + "Setup =====\n";
         std::cout << "Board:\n";
         printPlacementBoard(placementBoard, totalShips);
-		std::cout << "\nPlayer " + std::to_string(i) + " setup complete!\n";
+		std::cout << "\nPlayer " + (players > 1 ? std::to_string(i) + " " : "") + "setup complete!\n";
 		std::cout << "\nPress Enter to continue...";
         std::cin.get();
 		clearOutput(); // clear output so that the next player doesn't see the previous player's board
@@ -680,8 +680,9 @@ bool placeShips(std::vector<std::vector<char>>& placementBoard, int gridSize, st
 int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vector<std::unique_ptr<Ship>>& baseShips, int gridSize) {
     int turn = 1;
     std::deque<std::pair<std::pair<int, int>, std::pair<int, int>>> botAttackDeque = std::deque<std::pair<std::pair<int, int>, std::pair<int, int>>>();
-    int winner = 0;
-    while (winner == 0) {
+    int winner = -1;
+    bool tiePotential = false;
+    while (winner == -1 || tiePotential) {
         if (turn == 1) {
 			std::cout << "\n===== Player's Turn =====\n";
             std::cout << "\nBoard:\n";
@@ -706,6 +707,10 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             case 2:
 				std::cout << YELLOW << "Hit! You sunk a ship!\n" << RESET;
                 if (bot.getShipsRemaining() == 0) {
+                    if (player.hasOnePointRemaining()) {
+                        tiePotential = true;
+                        std::cout << YELLOW << "You sunk all of the ships! The Bot has one chance to tie.\n" << RESET;
+                    }
                     winner = 1;
                 }
                 break;
@@ -915,7 +920,13 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             case 2:
                 std::cout << YELLOW << "The bot attacked (" + std::to_string(attackPos.first) + ", " + std::to_string(attackPos.second) + ") and sunk your ship!\n" << RESET;
                 if (player.getShipsRemaining() == 0) {
-                    winner = 2;
+                    if (tiePotential) {
+                        winner = 0;
+                        tiePotential = false;
+                    }
+                    else {
+                        winner = 2;
+                    }
                 }
                 break;
             }
@@ -924,14 +935,17 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             std::cout << "\nShips:\n";
             printShips(baseShips, player.getSunkList());
         }
-        if (winner == 0) {
+        if (winner == -1) {
             std::cout << "Press Enter to continue...";
             std::cin.get();
         }
         turn = 3 - turn;
     }
 
-    if (winner == 1) {
+    if (winner == 0) {
+        std::cout << YELLOW << "Tie!\n" << RESET;
+    }
+    else if (winner == 1) {
         std::cout << YELLOW << "You Win!\n" << RESET;
     }
     else {
@@ -946,8 +960,9 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
 
 int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::vector<std::unique_ptr<Ship>>& baseShips, int gridSize) {
     int turn = 1;
-    int winner = 0;
-    while (winner == 0) {
+    int winner = -1;
+    bool tiePotential = false;
+    while (winner == -1 || tiePotential) {
         PlayerManager& currPlayerManager = (turn == 1 ? player2 : player1);
         std::cout << "\n===== Player " << turn << "'s Turn =====\n";
         std::cout << "\nBoard:\n";
@@ -972,7 +987,19 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         case 2:
             std::cout << YELLOW << "Hit! Player " << turn << " sunk a ship!\n" << RESET;
             if (currPlayerManager.getShipsRemaining() == 0) {
-                winner = turn;
+                if (tiePotential) {
+                    tiePotential = false;
+                    winner = 0;
+                }
+                else {
+                    if (turn == 1) {
+                        if (player1.hasOnePointRemaining()) {
+                            tiePotential = true;
+                            std::cout << YELLOW << "Player 1 sunk all of the ships! Player 2 has one chance to tie.\n" << RESET;
+                        }
+                    }
+                    winner = turn;
+                }
             }
             break;
         }
@@ -987,7 +1014,10 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         turn = 3 - turn;
     }
 
-    if (winner == 1) {
+    if (winner == 0) {
+        std::cout << YELLOW << "Tie!\n" << RESET;
+    }
+    else if (winner == 1) {
         std::cout << YELLOW << "\nPlayer 1 Wins!\n" << RESET;
     }
     else {
@@ -1031,21 +1061,26 @@ void printEndBoards(int winner, bool singleplayer, PlayerManager& player1, Playe
         std::cout << "\nPlayer 2 Ships:\n";
     }
     printShips(baseShips, player2.getSunkList());
-    std::cout << YELLOW << "Winner: ";
-    if (winner == 1) {
-        if (singleplayer) {
-            std::cout << "Player\n" << RESET;
-        }
-        else {
-            std::cout << "Player 1\n" << RESET;
-        }
+    if (winner == 0) {
+        std::cout << YELLOW << "Tie\n" << RESET;
     }
     else {
-        if (singleplayer) {
-            std::cout << "Bot\n" << RESET;
+        std::cout << YELLOW << "Winner: ";
+        if (winner == 1) {
+            if (singleplayer) {
+                std::cout << "Player\n" << RESET;
+            }
+            else {
+                std::cout << "Player 1\n" << RESET;
+            }
         }
         else {
-            std::cout << "Player 2\n" << RESET;
+            if (singleplayer) {
+                std::cout << "Bot\n" << RESET;
+            }
+            else {
+                std::cout << "Player 2\n" << RESET;
+            }
         }
     }
     std::cout << "\nPress Enter to return to Main Menu...";

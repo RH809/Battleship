@@ -27,6 +27,7 @@ public:
 	void setPosition(int _r, int _c);
 	void setShipNum(int num);
 	int getShipNum() const;
+	int getNumPointsRemaining() const;
 
 	std::vector<std::vector<bool>> getShipGrid() const;
 
