@@ -172,7 +172,22 @@ int setup(bool classic, std::vector<std::unique_ptr<Ship>>& baseShips) {
                     std::cout << RED << "Ship list is empty.\n" << RESET;
                 }
                 else {
-                    break;
+                    // validate ship list
+                    // create temporary board and ship list for validation
+                    std::vector<std::vector<char>> tempBoard = std::vector<std::vector<char>>(
+                        gridSize, std::vector<char>(gridSize, '.')
+                    );
+                    std::vector<std::unique_ptr<Ship>> tempShips = std::vector<std::unique_ptr<Ship>>();
+                    for (const auto& ship : baseShips)
+                    {
+                        tempShips.push_back(ship->clone());
+                    }
+                    if (!placeShips(tempBoard, gridSize, tempShips, 0)) {
+                        std::cout << RED << "Invalid ship list. Ships do not fit on the board.\n" << RESET;
+                    }
+                    else {
+                        break; // valid
+                    }
                 }
             }
             else if (setupInput == 2) {
@@ -935,7 +950,7 @@ int playSingleplayer(PlayerManager& player, PlayerManager& bot, const std::vecto
             std::cout << "\nShips:\n";
             printShips(baseShips, player.getSunkList());
         }
-        if (winner == -1) {
+        if (winner == -1 || tiePotential) {
             std::cout << "Press Enter to continue...";
             std::cin.get();
         }
@@ -1007,7 +1022,7 @@ int playMultiplayer(PlayerManager& player1, PlayerManager& player2, const std::v
         printGameBoard(currPlayerManager.getDisplayBoard());
         std::cout << "\nShips:\n";
         printShips(baseShips, currPlayerManager.getSunkList());
-        if (winner == 0) {
+        if (winner == -1 || tiePotential) {
             std::cout << "Press Enter to continue...";
             std::cin.get();
         }
@@ -1046,7 +1061,7 @@ void printEndBoards(int winner, bool singleplayer, PlayerManager& player1, Playe
         std::cout << "\nPlayer 1 Ships:\n";
     }
     printShips(baseShips, player1.getSunkList());
-    std::cout << "\n";
+    std::cout << "----------------------------\n";
     if (singleplayer) {
         std::cout << "\nBot Board:\n";
     }
