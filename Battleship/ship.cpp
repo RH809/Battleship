@@ -19,6 +19,7 @@ int Ship::getC() const { return c; }
 void Ship::setPosition(int _r, int _c) { r = _r; c = _c; }
 void Ship::setShipNum(int num) { shipNum = num; }
 int Ship::getShipNum() const { return shipNum; }
+int Ship::getNumPointsRemaining() const { return numPoints; }
 
 std::vector<std::vector<bool>> Ship::getShipGrid() const { return shipGrid; }
 

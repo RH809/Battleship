@@ -57,6 +57,22 @@ const std::vector<std::vector<char>>& PlayerManager::getDisplayBoard() const {
 	return displayBoard;
 }
 
+const std::vector<std::vector<char>>& PlayerManager::getPlacementBoard() const {
+	return placementBoard;
+}
+
 bool PlayerManager::alreadySunk(int r, int c) {
 	return displayBoard[r][c] == 'x';
+}
+
+bool PlayerManager::hasOnePointRemaining() const {
+	if (shipsRemaining > 1) {
+		return false;
+	}
+	for (const std::unique_ptr<Ship>& ship : ships) {
+		if (ship->getNumPointsRemaining() == 1) {
+			return true;
+		}
+	}
+	return false;
 }
