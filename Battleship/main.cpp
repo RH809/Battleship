@@ -174,15 +174,18 @@ int setup(bool classic, std::vector<std::unique_ptr<Ship>>& baseShips) {
                 else {
                     // validate ship list
                     // create temporary board and ship list for validation
+                    std::cout << YELLOW << "Validating ship list...\n" << RESET;
                     std::vector<std::vector<char>> tempBoard = std::vector<std::vector<char>>(
                         gridSize, std::vector<char>(gridSize, '.')
                     );
                     std::vector<std::unique_ptr<Ship>> tempShips = std::vector<std::unique_ptr<Ship>>();
+                    int totalPoints = 0;
                     for (const auto& ship : baseShips)
                     {
                         tempShips.push_back(ship->clone());
+                        totalPoints += ship->getNumPointsRemaining();
                     }
-                    if (!placeShips(tempBoard, gridSize, tempShips, 0)) {
+                    if (totalPoints > gridSize * gridSize || !placeShips(tempBoard, gridSize, tempShips, 0)) {
                         std::cout << RED << "Invalid ship list. Ships do not fit on the board.\n" << RESET;
                     }
                     else {
